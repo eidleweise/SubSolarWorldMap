@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/build}"
+BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/build-release}"
 DRY_RUN=false
 
 case "${1:-}" in
@@ -25,7 +25,7 @@ case "${1:-}" in
         ;;
 esac
 
-for command in cmake ctest git jq sha256sum; do
+for command in cmake ctest git jq sha256sum cc c++; do
     if ! command -v "$command" >/dev/null 2>&1; then
         printf 'Required command not found: %s\n' "$command" >&2
         exit 1
