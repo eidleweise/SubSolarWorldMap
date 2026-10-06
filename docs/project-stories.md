@@ -1,6 +1,8 @@
 # SubSolar World Map: Product Stories
 
-This backlog captures the product direction implied by `README.md` and `HANDOVER.md`. It is intentionally written as a set of implementation-ready stories for a small KDE widget project.
+This backlog tracks implemented behavior and remaining validation for the KDE
+Plasma widget. Status notes reflect the current source and test coverage; visual
+and Plasma-runtime criteria still require checks on a live desktop.
 
 ## Epic: Live World Clock and Daylight Map
 
@@ -54,7 +56,17 @@ Acceptance criteria:
 Implementation note: `solarMath.js` uses the UTC instant represented by a
 JavaScript `Date`; it does not depend on the machine's local timezone. The
 solar module has deterministic tests for equinox/solstice positions, longitude
-movement, equivalent timezone representations, and invalid input.
+movement, equivalent timezone representations, horizon transitions around
+Greenwich equinox sunrise/sunset, polar-circle day/night at solstices, and
+invalid input. `solarAltitudeCosine()` tests the daylight geometry used by the
+map shader without requiring the user to change the system clock.
+
+Status: **Implemented; automated edge-case checks pass.** The solar
+position and shader update every 30 seconds, and the clock can be hidden or
+configured for date format, time format, timezone, font family, and size. Time
+with seconds refreshes independently each second. Automated calculation tests
+cover representative dates and invalid inputs, as well as sunrise/sunset and
+polar daylight geometry. A visual rendering pass remains optional follow-up.
 
 ### Story 4: Blend the map smoothly across day and night regions (complete)
 
@@ -81,7 +93,11 @@ Acceptance criteria:
 - city data is downloaded from the documented, versioned upstream CSV release on first use and cached per user,
 - selected cities persist in applet configuration and only selected entries appear on the map,
 - labels or glyphs are readable,
-- each marker can show a city name and/or local time.
+- each marker shows a city name.
+
+Implementation note: selected catalog city pins currently show names, not local
+times. Arbitrary user-entered locations are not supported; the selectable
+markers come from the city catalog, alongside the separate Home pin.
 
 ### Story 6: Configure home location and selected city pins (complete)
 
@@ -103,6 +119,12 @@ Acceptance criteria:
 - users can search the downloaded city catalog and select or deselect city pins,
 - selected cities persist across restarts,
 - the widget remains readable and proportionally correct when resized.
+
+Status: **Implemented; helper tests added.** Automated tests cover fresh
+GeoClue location precedence, manual fallback when no fresh fix exists, ignoring
+stale saved coordinates, invalid location values, and no-pin behavior when
+fallback is disabled. Fresh startup behavior was verified in the deployed
+widget; opening settings reuses the applet's location watcher.
 
 ### Story 7: Provide a reusable solar math module
 
@@ -152,6 +174,35 @@ Acceptance criteria:
 - the solar and rendering approach is explained in plain language,
 - the expected implementation phases are visible to contributors.
 
+Status: **Complete.** README, handover, technical documentation, attribution,
+deployment notes, logging instructions, and this backlog are maintained.
+
+### Story 10a: Configure the map date and time display (complete)
+
+As a user,
+I want to control whether the clock appears and how it is formatted,
+so that the overlay fits my preferred map presentation.
+
+Acceptance criteria:
+
+- users can show or hide the date/time overlay,
+- date, time, timezone, font family, and font size are configurable,
+- second-level clock refresh runs only when a seconds format is selected and
+  the overlay is visible.
+
+### Story 10b: Provide developer diagnostics (complete)
+
+As a developer,
+I want to inspect deployment information and diagnostics,
+so that I can troubleshoot the widget without manually locating its files.
+
+Acceptance criteria:
+
+- the deployment timestamp is optional and off by default,
+- settings open the current rotating widget log and its containing folder,
+- settings can open recent Plasma Shell journal messages in a terminal,
+- runtime launch failures are surfaced in the settings UI.
+
 ## Epic: Quality and Maintainability
 
 ### Story 11: Validate visual correctness against real-world time changes
@@ -194,16 +245,50 @@ Acceptance criteria:
 - the UI can search the catalog without loading every city as a visible marker,
 - the project provides the required ODbL attribution and documents any redistribution obligations.
 
-## Suggested Priority Order
+Status: **Implemented.** The app loads a per-user cache immediately and checks
+upstream release metadata at most every six hours. The check timestamp is
+updated only after a successful metadata check, so network failures do not
+delay retries. Changed data is downloaded, SHA-256 verified, parsed, and
+atomically saved before replacing the active cache.
 
-1. Foundation / plasmoid shell
-2. Static equirectangular world view and shader blend
-3. Real-time solar terminator
-4. City marker support
-5. Searchable city selection and persistence
-6. Cached, asynchronous city-catalog updates
-7. Packaging and release polish
-8. Documentation and contributor onboarding
+### Story 14: Validate settings pages and runtime behavior in Plasma
+
+As a maintainer,
+I want to verify the applet's settings pages and location behavior in the
+target Plasma runtime,
+so that successful builds also correspond to a clean interactive experience.
+
+Acceptance criteria:
+
+- opening each settings category produces no missing `cfg_*` property errors,
+- startup location refresh updates the Home pin when GeoClue succeeds,
+- automated tests verify manual fallback selection when a fresh location is unavailable,
+- settings-page scene-placement warnings are understood and resolved or
+  documented as benign,
+- deployment and journal buttons behave correctly in the user's environment.
+
+Status: **In progress.** Missing `cfg_*` declarations have been fixed and
+verified in the deployed settings pages; the previous missing-property errors
+are gone. After the latest redeploy, the journal confirmed a fresh startup
+GeoClue request, a valid position update, and a nearest-city update to
+Solihull. Automated tests now cover manual fallback selection without disabling
+GeoClue on the user's desktop. A live settings pass confirmed Appearance,
+Cities, and Developer render and respond normally, while About opens without a warning.
+Plasma still reports "Created graphical object was not placed in the graphics
+scene" when the three custom settings pages open. No functional failure was
+observed, so this currently appears to be a benign lifecycle warning, though
+its cause is not confirmed.
+
+## Remaining Priority Order
+
+1. Optionally confirm the manual fallback visually in Plasma; its selection
+   behavior is covered by automated helper tests.
+2. Optionally investigate the non-blocking Plasma settings-page
+   scene-placement warning if it recurs or starts affecting behavior.
+3. Optionally inspect the rendered map against the automated sunrise/sunset
+   and polar-geometry scenarios.
+4. Optionally add local times to city pins or arbitrary custom locations if
+   those become product requirements.
 
 ## Definition of Done for the Epic
 
@@ -212,5 +297,9 @@ The epic is complete when the widget:
 - runs in KDE Plasma,
 - updates dynamically with real time,
 - shows the day/night boundary correctly,
-- supports user-defined markers,
+- supports selected city markers and a configurable Home location,
 - is documented well enough for future contributors to continue development.
+
+Core rendering, marker selection, catalog updating, configuration, packaging,
+and documentation are implemented. The remaining work is runtime/visual
+validation rather than foundational feature development.

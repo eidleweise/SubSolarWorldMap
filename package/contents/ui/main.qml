@@ -9,6 +9,7 @@ import org.kde.plasma.plasmoid
 import "../js/solarMath.js" as SolarMath
 import "../js/buildInfo.js" as BuildInfo
 import "../js/cityCatalog.js" as CityCatalog
+import "../js/homeLocation.js" as HomeLocation
 import "../js/pinAppearance.js" as PinAppearance
 import QtPositioning
 import "../lib/SubSolar/CityCatalog"
@@ -108,40 +109,35 @@ PlasmoidItem {
             if (Plasmoid.configuration.showHomePin === false) {
                 return null
             }
-            if (root.homeLocationAvailable) {
-                const nearestCity = root.cityEntries.length > 0
-                                    ? CityCatalog.nearestCity(
-                                          root.cityEntries,
-                                          root.detectedHomeLatitude,
-                                          root.detectedHomeLongitude)
-                                    : null
-                return {
+            const coordinates = HomeLocation.coordinatesForHomePin(
+                root.homeLocationAvailable,
+                {
                     latitude: root.detectedHomeLatitude,
-                    longitude: root.detectedHomeLongitude,
-                    name: nearestCity
-                          ? nearestCity.name + ", " + nearestCity.country
-                          : qsTr("Home"),
-                    colorIndex: Plasmoid.configuration.homePinColor,
-                    opacity: Plasmoid.configuration.homePinOpacity
-                }
+                    longitude: root.detectedHomeLongitude
+                },
+                Plasmoid.configuration.useManualHome,
+                {
+                    latitude: Plasmoid.configuration.manualHomeLatitude,
+                    longitude: Plasmoid.configuration.manualHomeLongitude
+                })
+            if (!coordinates) {
+                return null
             }
-            if (Plasmoid.configuration.useManualHome) {
-                const latitude = Plasmoid.configuration.manualHomeLatitude
-                const longitude = Plasmoid.configuration.manualHomeLongitude
-                const nearestCity = root.cityEntries.length > 0
-                                    ? CityCatalog.nearestCity(root.cityEntries, latitude, longitude)
-                                    : null
-                return {
-                    latitude: latitude,
-                    longitude: longitude,
-                    name: nearestCity
-                          ? nearestCity.name + ", " + nearestCity.country
-                          : qsTr("Home"),
-                    colorIndex: Plasmoid.configuration.homePinColor,
-                    opacity: Plasmoid.configuration.homePinOpacity
-                }
+            const nearestCity = root.cityEntries.length > 0
+                                ? CityCatalog.nearestCity(
+                                      root.cityEntries,
+                                      coordinates.latitude,
+                                      coordinates.longitude)
+                                : null
+            return {
+                latitude: coordinates.latitude,
+                longitude: coordinates.longitude,
+                name: nearestCity
+                      ? nearestCity.name + ", " + nearestCity.country
+                      : qsTr("Home"),
+                colorIndex: Plasmoid.configuration.homePinColor,
+                opacity: Plasmoid.configuration.homePinOpacity
             }
-            return null
         }
         readonly property var selectedCityLocations: root.cityEntries.filter(city =>
             (Plasmoid.configuration.selectedCities || []).includes(city.cityId))

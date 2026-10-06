@@ -55,3 +55,24 @@ function subsolarPoint(date) {
         longitude: longitude
     }
 }
+
+function solarAltitudeCosine(latitude, longitude, solarPosition) {
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+            || !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+            || !solarPosition
+            || !Number.isFinite(solarPosition.latitude)
+            || solarPosition.latitude < -90 || solarPosition.latitude > 90
+            || !Number.isFinite(solarPosition.longitude)
+            || solarPosition.longitude < -180 || solarPosition.longitude > 180) {
+        throw new TypeError("solarAltitudeCosine expects valid geographic coordinates")
+    }
+
+    const radians = Math.PI / 180
+    const locationLatitude = latitude * radians
+    const locationLongitude = longitude * radians
+    const sunLatitude = solarPosition.latitude * radians
+    const sunLongitude = solarPosition.longitude * radians
+    return Math.sin(locationLatitude) * Math.sin(sunLatitude)
+            + Math.cos(locationLatitude) * Math.cos(sunLatitude)
+            * Math.cos(locationLongitude - sunLongitude)
+}

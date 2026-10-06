@@ -50,6 +50,11 @@ if(NODE_EXECUTABLE)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/cityCatalog.test.js"
     )
     add_test(
+        NAME home-location
+        COMMAND "${NODE_EXECUTABLE}" --test
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/homeLocation.test.js"
+    )
+    add_test(
         NAME map-projection
         COMMAND "${NODE_EXECUTABLE}" --test
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/mapProjection.test.js"
