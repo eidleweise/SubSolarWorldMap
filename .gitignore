@@ -10,7 +10,17 @@
 *.dll
 *.dylib
 
-# Qt-es
+# CMake build output
+/build/
+*build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+/Testing/
+/Makefile
+
+# Qt generated files
 object_script.*.Release
 object_script.*.Debug
 *_plugin_import.cpp
@@ -27,9 +37,6 @@ qrc_*.cpp
 ui_*.h
 *.qmlc
 *.jsc
-Makefile*
-*build-*
-build/
 *.qm
 *.prl
 *.qmlls.ini
@@ -54,3 +61,21 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# IDE and editor state
+/.idea/
+*.swp
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Full-resolution source images; runtime assets are stored in day/ and night/
+/package/contents/assets/original/
+
+# Generated map variants not used by the current plasmoid
+/package/contents/assets/day/world.200407.*.png
+/package/contents/assets/day/world.topo.200407.*.png
+/package/contents/assets/day/world.topo.bathy.200407.*.png
+/package/contents/assets/night/BlackMarble20162012diff500m*.png

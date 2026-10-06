@@ -1,0 +1,3 @@
+.pragma library
+
+var buildTimestamp = "@BUILD_TIMESTAMP@"
