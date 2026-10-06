@@ -54,7 +54,9 @@ run:
 The script reads the version from `package/metadata.json` and checks it against
 CMake, builds the project, runs the tests, creates a versioned source archive
 and SHA-256 checksum, then asks before creating the matching `v`-prefixed tag
-and GitHub Release. It uses a separate `build-release/` directory so a build
+and GitHub Release. Before publishing, it proposes a release title and
+description for you to accept or edit, then asks you to type `publish`.
+It uses a separate `build-release/` directory so a build
 configured on the host or in another container cannot leave incompatible
 compiler paths in CMake's cache. The archive and checksum are also kept in
 `build-release/releases/`. Use `./release.sh --dry-run` to build and create the

@@ -122,16 +122,67 @@ if $DRY_RUN; then
     exit 0
 fi
 
-printf '\nThis will create remote tag %s and publish a GitHub Release. Continue? [y/N] ' "$tag"
-read -r confirmation
-if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+release_title="SubSolar World Map $tag"
+release_notes="$(cat <<'NOTES'
+SubSolar World Map is a KDE Plasma 6 widget showing the current day and night
+regions across Earth, with a live clock and configurable location pins.
+
+Highlights:
+- Follow the Sun's position and the moving day/night boundary.
+- Use automatic location, choose a catalog city, or enter coordinates for Home.
+- Search an alphabetized, deduplicated city catalog and add city pins.
+- Customize pin colors, opacity, and city marker shape.
+- Configure the clock display and formatting.
+
+To install, download and extract the source archive, then run
+`./deploy.sh --restart-shell` from the extracted project directory. This builds
+the Qt plugin for your system and installs the widget for your Plasma user.
+See the README for build dependencies and details.
+NOTES
+)"
+
+printf '\nProposed release title: %s\n' "$release_title"
+printf 'Enter a different title, or press Enter to keep it: '
+IFS= read -r title_input
+if [[ -n "$title_input" ]]; then
+    release_title="$title_input"
+fi
+
+printf '\nProposed release description:\n\n%s\n\n' "$release_notes"
+printf 'Use these notes [Y], edit them [e], or cancel [N]? '
+IFS= read -r notes_choice
+case "$notes_choice" in
+    ""|[Yy])
+        ;;
+    [Ee])
+        printf 'Enter replacement notes; finish with a single dot (.) on its own line:\n'
+        release_notes=""
+        while IFS= read -r line; do
+            [[ "$line" == "." ]] && break
+            release_notes+="$line"$'\n'
+        done
+        if [[ -z "${release_notes//[$'\n\r\t ']/}" ]]; then
+            printf 'Release description cannot be empty.\n' >&2
+            exit 1
+        fi
+        ;;
+    *)
+        printf 'Release cancelled.\n'
+        exit 1
+        ;;
+esac
+
+printf '\nReady to publish:\nTag:   %s\nTitle: %s\n\n%s\n\n' "$tag" "$release_title" "$release_notes"
+printf 'Type "publish" to create the tag and GitHub Release: '
+IFS= read -r confirmation
+if [[ "$confirmation" != "publish" ]]; then
     printf 'Release cancelled. The local archive and checksum were kept.\n'
     exit 1
 fi
 
 gh release create "$tag" "$archive_path" "$checksum_path" \
     --target "$commit" \
-    --title "$tag" \
-    --generate-notes
+    --title "$release_title" \
+    --notes "$release_notes"
 
 printf '\nPublished %s from commit %s.\n' "$tag" "$commit"
