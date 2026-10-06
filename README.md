@@ -25,9 +25,34 @@ yourself. Your coordinates are not sent to a geocoding service.
 In Plasma, right-click the desktop and choose **Add Widgets**. Search for
 **SubSolar World Map** and add it to your desktop.
 
-If you are installing from a source checkout, run `./deploy.sh --restart-shell`
-from the project directory. This builds and installs the widget for your user
-and restarts Plasma Shell so it can load the new version.
+### Install from a source checkout
+
+On a KDE Plasma 6 Linux system with the project build dependencies installed:
+
+```sh
+git clone https://github.com/eidleweise/SubSolarWorldMap.git
+cd SubSolarWorldMap
+./deploy.sh --restart-shell
+```
+
+The script builds and tests the widget, installs it for your user, and restarts
+Plasma Shell. You can then add it from the desktop's **Add Widgets** menu as
+described above. No `sudo` is needed.
+
+### Install a release
+
+Download and extract the source archive from the project's
+[GitHub Releases](https://github.com/eidleweise/SubSolarWorldMap/releases),
+then open a terminal in the extracted folder and run:
+
+```sh
+./deploy.sh --restart-shell
+```
+
+Releases are source packages, not universal precompiled binaries. The install
+script builds the native Qt plugin for your system, so you need the required
+build tools and KDE/Qt development packages. See
+[docs/HANDOVER.md](docs/HANDOVER.md) for build details.
 
 ## Settings
 
