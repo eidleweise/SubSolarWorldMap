@@ -85,6 +85,12 @@ Each marker shall carry:
 - optional style metadata,
 - enabled/visible state for filtering.
 
+The cached catalog is read, validated, deduplicated, and alphabetized on a
+QtConcurrent worker so a large catalog does not block the Plasma UI thread.
+The manager publishes both the original records (for nearest-city lookup) and
+the prepared unique list (for settings and selectable pins); QML reuses the
+prepared list rather than sorting and deduplicating it during each search.
+
 ### 5.4 Configuration
 
 The plasmoid exposes a Date & Time page through Plasma's native applet
@@ -96,13 +102,13 @@ configuration work includes adding custom locations and extending the city
 catalog.
 
 The applet requests a fresh Qt Positioning/GeoClue fix at every startup and
-continues periodic updates while running. Until a valid fix arrives, stale
-saved coordinates are not treated as current; users can enable manual fallback
-coordinates when GeoClue is unavailable. Other pins are selected from the locally cached city
-catalog and persisted as city IDs. Settings show the nearest city name from
-that catalog for the detected Home location; this is an approximation, not
-reverse geocoding. Manual fallback fields are collapsible and displayed side
-by side. Precise Home coordinates are not displayed.
+continues periodic updates while running. Users can instead choose a city
+from the local catalog or enter coordinates; a manual location takes priority
+over automatic location. Until a valid fix arrives, stale saved coordinates
+are not treated as current. Other pins are selected from the locally cached
+city catalog and persisted as city IDs. The nearest city shown for automatic
+coordinates is an approximation, not reverse geocoding. Precise coordinates
+are not sent to a geocoding service.
 
 The Developer settings page controls the deployment timestamp and opens the
 diagnostic log or its containing directory. `CityCatalogManager` writes

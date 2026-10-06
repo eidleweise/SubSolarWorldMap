@@ -90,6 +90,8 @@ Acceptance criteria:
 
 - markers are positioned correctly based on latitude and longitude,
 - the Cities settings page can search the downloaded, locally cached city list by city or country,
+- the city results list has a scrollbar when needed and shows the current result count,
+- city results are sorted alphabetically and duplicate records for the same nearby place are combined,
 - city data is downloaded from the documented, versioned upstream CSV release on first use and cached per user,
 - selected cities persist in applet configuration and only selected entries appear on the map,
 - labels or glyphs are readable,
@@ -115,16 +117,17 @@ Acceptance criteria:
 - per-city opacity gestures and resulting saved values are recorded in the diagnostics log,
 - the Cities settings page shows the nearest listed city and recalculates it when the location or catalog changes,
 - opening Cities settings reuses the applet's latest location instead of starting another GeoClue watcher,
-- users can configure manual Home coordinates as a fallback when a fresh system location is unavailable, rather than silently using stale saved coordinates,
+- users can choose a catalog city or enter manual Home coordinates, overriding automatic location when desired,
 - users can search the downloaded city catalog and select or deselect city pins,
 - selected cities persist across restarts,
 - the widget remains readable and proportionally correct when resized.
 
 Status: **Implemented; helper tests added.** Automated tests cover fresh
-GeoClue location precedence, manual fallback when no fresh fix exists, ignoring
-stale saved coordinates, invalid location values, and no-pin behavior when
-fallback is disabled. Fresh startup behavior was verified in the deployed
-widget; opening settings reuses the applet's location watcher.
+location precedence, choosing manual coordinates over automatic location,
+choosing a catalog city's coordinates, manual fallback when no fresh fix
+exists, ignoring stale saved coordinates, invalid location values, and no-pin
+behavior when no location is available. Fresh startup behavior was verified
+in the deployed widget; opening settings reuses the applet's location watcher.
 
 ### Story 7: Provide a reusable solar math module
 

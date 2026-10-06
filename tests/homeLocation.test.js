@@ -10,14 +10,24 @@ const source = fs.readFileSync(sourcePath, "utf8")
 const homeLocation = vm.createContext({})
 vm.runInContext(source, homeLocation, { filename: sourcePath })
 
-test("fresh system location takes precedence over manual fallback", () => {
+test("fresh system location is used when manual location is disabled", () => {
+    const coordinates = homeLocation.coordinatesForHomePin(
+        true,
+        { latitude: 51.5, longitude: -0.1 },
+        false,
+        { latitude: 40.7, longitude: -74 })
+
+    assert.deepEqual({ ...coordinates }, { latitude: 51.5, longitude: -0.1 })
+})
+
+test("manual location overrides an available system location", () => {
     const coordinates = homeLocation.coordinatesForHomePin(
         true,
         { latitude: 51.5, longitude: -0.1 },
         true,
         { latitude: 40.7, longitude: -74 })
 
-    assert.deepEqual({ ...coordinates }, { latitude: 51.5, longitude: -0.1 })
+    assert.deepEqual({ ...coordinates }, { latitude: 40.7, longitude: -74 })
 })
 
 test("manual coordinates are used when no fresh system location is available", () => {
@@ -40,7 +50,7 @@ test("stale saved coordinates are ignored when location is unavailable and fallb
     assert.equal(coordinates, null)
 })
 
-test("invalid fresh coordinates fall back to valid manual coordinates", () => {
+test("invalid fresh coordinates use manual coordinates when manual mode is enabled", () => {
     const coordinates = homeLocation.coordinatesForHomePin(
         true,
         { latitude: 91, longitude: -0.1 },

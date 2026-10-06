@@ -15,6 +15,7 @@ class CityCatalogManager : public QObject
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QVariantList cities READ cities NOTIFY citiesChanged)
+    Q_PROPERTY(QVariantList uniqueCities READ uniqueCities NOTIFY citiesChanged)
     Q_PROPERTY(QString version READ version NOTIFY versionChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString logFilePath READ logFilePath CONSTANT)
@@ -24,6 +25,7 @@ public:
     ~CityCatalogManager() override;
 
     QVariantList cities() const;
+    QVariantList uniqueCities() const;
     QString version() const;
     QString status() const;
     QString logFilePath() const;
@@ -39,6 +41,7 @@ signals:
 
 private:
     void setStatus(const QString &status);
+    void continueStart();
     void checkForUpdate();
     void downloadAsset(const QUrl &url, const QByteArray &digest, const QString &version);
     void handleFailure(const QString &message);
@@ -47,6 +50,7 @@ private:
 
     QNetworkAccessManager m_network;
     QVariantList m_cities;
+    QVariantList m_uniqueCities;
     QString m_version;
     QString m_status;
     QString m_cachePath;

@@ -12,18 +12,18 @@ function isValidCoordinates(coordinates) {
 
 function coordinatesForHomePin(locationAvailable,
                                detectedCoordinates,
-                               useManualFallback,
+                               useManualLocation,
                                manualCoordinates) {
+    if (useManualLocation && isValidCoordinates(manualCoordinates)) {
+        return {
+            latitude: manualCoordinates.latitude,
+            longitude: manualCoordinates.longitude
+        }
+    }
     if (locationAvailable && isValidCoordinates(detectedCoordinates)) {
         return {
             latitude: detectedCoordinates.latitude,
             longitude: detectedCoordinates.longitude
-        }
-    }
-    if (useManualFallback && isValidCoordinates(manualCoordinates)) {
-        return {
-            latitude: manualCoordinates.latitude,
-            longitude: manualCoordinates.longitude
         }
     }
     return null

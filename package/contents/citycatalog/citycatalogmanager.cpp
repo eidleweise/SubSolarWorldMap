@@ -5,6 +5,7 @@
 #include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -23,6 +24,7 @@
 
 #include <zlib.h>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -34,8 +36,120 @@ constexpr qint64 MaximumLogSize = 1024 * 1024;
 
 struct CatalogResult {
     QVariantList cities;
+    QVariantList uniqueCities;
     QString error;
 };
+
+struct CachedCatalogResult {
+    CatalogResult catalog;
+    QString version;
+    QDateTime lastCheckedAt;
+    QString readError;
+    QString validationError;
+    bool valid = false;
+};
+
+double distanceKm(double leftLatitude, double leftLongitude,
+                  double rightLatitude, double rightLongitude)
+{
+    constexpr double radians = 3.14159265358979323846 / 180.0;
+    const double latitudeDelta = (rightLatitude - leftLatitude) * radians;
+    const double longitudeDelta = (rightLongitude - leftLongitude) * radians;
+    const double haversine = std::pow(std::sin(latitudeDelta / 2), 2)
+            + std::cos(leftLatitude * radians) * std::cos(rightLatitude * radians)
+            * std::pow(std::sin(longitudeDelta / 2), 2);
+    const double safeHaversine = std::clamp(haversine, 0.0, 1.0);
+    return 6371.0 * 2 * std::atan2(std::sqrt(safeHaversine), std::sqrt(1 - safeHaversine));
+}
+
+QVariantList uniqueCities(const QVariantList &cities)
+{
+    QHash<QString, QList<QVariantMap>> grouped;
+    for (const QVariant &value : cities) {
+        const QVariantMap city = value.toMap();
+        const QString key = (city.value(QStringLiteral("name")).toString()
+                             + QChar(0)
+                             + city.value(QStringLiteral("country")).toString()).toCaseFolded();
+        QList<QVariantMap> &sameName = grouped[key];
+        const double latitude = city.value(QStringLiteral("latitude")).toDouble();
+        const double longitude = city.value(QStringLiteral("longitude")).toDouble();
+        auto duplicate = std::find_if(sameName.begin(), sameName.end(), [&](const QVariantMap &existing) {
+            return distanceKm(existing.value(QStringLiteral("latitude")).toDouble(),
+                              existing.value(QStringLiteral("longitude")).toDouble(),
+                              latitude, longitude) < 2.0;
+        });
+        if (duplicate == sameName.end()) {
+            sameName.append(city);
+        } else if (city.value(QStringLiteral("population")).toInt()
+                   > duplicate->value(QStringLiteral("population")).toInt()) {
+            *duplicate = city;
+        }
+    }
+
+    QVariantList result;
+    result.reserve(cities.size());
+    for (const QList<QVariantMap> &sameName : grouped) {
+        for (const QVariantMap &city : sameName) {
+            result.append(city);
+        }
+    }
+    std::sort(result.begin(), result.end(), [](const QVariant &left, const QVariant &right) {
+        const QVariantMap leftCity = left.toMap();
+        const QVariantMap rightCity = right.toMap();
+        const int nameOrder = QString::localeAwareCompare(
+            leftCity.value(QStringLiteral("name")).toString(),
+            rightCity.value(QStringLiteral("name")).toString());
+        return nameOrder < 0 || (nameOrder == 0 && QString::localeAwareCompare(
+            leftCity.value(QStringLiteral("country")).toString(),
+            rightCity.value(QStringLiteral("country")).toString()) < 0);
+    });
+    return result;
+}
+
+CachedCatalogResult readCatalogCache(const QString &path)
+{
+    CachedCatalogResult result;
+    QFile cache(path);
+    if (!cache.open(QIODevice::ReadOnly)) {
+        result.readError = cache.errorString();
+        return result;
+    }
+
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(cache.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        result.validationError = QStringLiteral("Invalid JSON: %1").arg(parseError.errorString());
+        return result;
+    }
+
+    const QJsonObject root = document.object();
+    const QJsonArray cityArray = root.value(QStringLiteral("cities")).toArray();
+    result.version = root.value(QStringLiteral("sourceVersion")).toString();
+    result.lastCheckedAt = QDateTime::fromString(
+        root.value(QStringLiteral("lastCheckedAt")).toString(), Qt::ISODate);
+    result.valid = !cityArray.isEmpty() && !result.version.isEmpty();
+    for (const QJsonValue &value : cityArray) {
+        const QJsonObject city = value.toObject();
+        const double latitude = city.value(QStringLiteral("latitude")).toDouble(-1000);
+        const double longitude = city.value(QStringLiteral("longitude")).toDouble(-1000);
+        if (!value.isObject() || city.value(QStringLiteral("cityId")).toString().isEmpty()
+            || city.value(QStringLiteral("name")).toString().isEmpty()
+            || city.value(QStringLiteral("country")).toString().isEmpty()
+            || !std::isfinite(latitude) || latitude < -90 || latitude > 90
+            || !std::isfinite(longitude) || longitude < -180 || longitude > 180) {
+            result.valid = false;
+            break;
+        }
+    }
+
+    if (!result.valid) {
+        result.validationError = QStringLiteral("City cache has no valid city records");
+        return result;
+    }
+    result.catalog.cities = cityArray.toVariantList();
+    result.catalog.uniqueCities = uniqueCities(result.catalog.cities);
+    return result;
+}
 
 bool decompressGzip(const QByteArray &compressed, QByteArray *expanded, QString *error)
 {
@@ -194,6 +308,9 @@ CatalogResult parseExport(const QByteArray &compressed)
         return result;
     }
     parseCsv(expanded, &result.cities, &result.error);
+    if (result.error.isEmpty()) {
+        result.uniqueCities = uniqueCities(result.cities);
+    }
     return result;
 }
 }
@@ -210,6 +327,11 @@ CityCatalogManager::~CityCatalogManager() = default;
 QVariantList CityCatalogManager::cities() const
 {
     return m_cities;
+}
+
+QVariantList CityCatalogManager::uniqueCities() const
+{
+    return m_uniqueCities;
 }
 
 QString CityCatalogManager::version() const
@@ -360,59 +482,48 @@ void CityCatalogManager::start()
                  .arg(cachePath(), cacheInfo.exists() ? QStringLiteral("exists")
                                                       : QStringLiteral("not found")));
     if (cacheInfo.exists()) {
-        QFile cache(cachePath());
-        if (!cache.open(QIODevice::ReadOnly)) {
-            handleFailure(QStringLiteral("Unable to read city cache: %1").arg(cache.errorString()));
-            return;
-        }
-        QJsonParseError parseError;
-        const QJsonDocument document = QJsonDocument::fromJson(cache.readAll(), &parseError);
-        if (parseError.error == QJsonParseError::NoError && document.isObject()) {
-            const QJsonObject root = document.object();
-            const QJsonArray cityArray = root.value(QStringLiteral("cities")).toArray();
-            bool validCache = !cityArray.isEmpty()
-                              && !root.value(QStringLiteral("sourceVersion")).toString().isEmpty();
-            for (const QJsonValue &value : cityArray) {
-                const QJsonObject city = value.toObject();
-                bool latitudeOk = false;
-                bool longitudeOk = false;
-                const double latitude = city.value(QStringLiteral("latitude")).toDouble(-1000);
-                const double longitude = city.value(QStringLiteral("longitude")).toDouble(-1000);
-                latitudeOk = std::isfinite(latitude) && latitude >= -90 && latitude <= 90;
-                longitudeOk = std::isfinite(longitude) && longitude >= -180 && longitude <= 180;
-                if (!value.isObject() || city.value(QStringLiteral("cityId")).toString().isEmpty()
-                    || city.value(QStringLiteral("name")).toString().isEmpty()
-                    || city.value(QStringLiteral("country")).toString().isEmpty()
-                    || !latitudeOk || !longitudeOk) {
-                    validCache = false;
-                    break;
-                }
+        setStatus(QStringLiteral("Loading cached city list…"));
+        auto *watcher = new QFutureWatcher<CachedCatalogResult>(this);
+        connect(watcher, &QFutureWatcher<CachedCatalogResult>::finished, this, [this, watcher] {
+            const CachedCatalogResult result = watcher->result();
+            watcher->deleteLater();
+            if (!result.readError.isEmpty()) {
+                handleFailure(QStringLiteral("Unable to read city cache: %1").arg(result.readError));
+                return;
             }
-            if (validCache) {
-                m_cities = cityArray.toVariantList();
-                m_version = root.value(QStringLiteral("sourceVersion")).toString();
-                m_lastCheckedAt = QDateTime::fromString(
-                    root.value(QStringLiteral("lastCheckedAt")).toString(), Qt::ISODate);
+            if (result.valid) {
+                m_cities = result.catalog.cities;
+                m_uniqueCities = result.catalog.uniqueCities;
+                m_version = result.version;
+                m_lastCheckedAt = result.lastCheckedAt;
                 emit citiesChanged();
                 emit versionChanged();
                 setStatus(QStringLiteral("%1 cities available (catalog %2)")
                               .arg(m_cities.size()).arg(m_version));
                 logEvent(QStringLiteral("city catalog"),
-                         QStringLiteral("Loaded %1 cached city records; version %2")
-                             .arg(m_cities.size()).arg(m_version));
+                         QStringLiteral("Loaded %1 cached city records and prepared %2 unique entries; version %3")
+                             .arg(m_cities.size()).arg(m_uniqueCities.size()).arg(m_version));
             } else {
                 logEvent(QStringLiteral("city catalog/error"),
-                         QStringLiteral("City cache has no valid city records; downloading a fresh copy"));
+                         QStringLiteral("City cache is invalid; downloading a fresh copy: %1")
+                             .arg(result.validationError));
             }
-        } else {
-            logEvent(QStringLiteral("city catalog/error"),
-                     QStringLiteral("City cache is invalid; downloading a fresh copy: %1")
-                         .arg(parseError.errorString()));
-        }
+            continueStart();
+        });
+        const QString path = cachePath();
+        watcher->setFuture(QtConcurrent::run([path] {
+            return readCatalogCache(path);
+        }));
+        return;
     } else {
         setStatus(QStringLiteral("Downloading city list for first use…"));
     }
 
+    continueStart();
+}
+
+void CityCatalogManager::continueStart()
+{
     const qint64 secondsSinceCheck = m_lastCheckedAt.isValid()
                                          ? m_lastCheckedAt.secsTo(QDateTime::currentDateTimeUtc())
                                          : -1;
@@ -599,6 +710,7 @@ void CityCatalogManager::downloadAsset(const QUrl &url, const QByteArray &digest
             }
 
             m_cities = result.cities;
+            m_uniqueCities = result.uniqueCities;
             m_version = version;
             emit citiesChanged();
             emit versionChanged();

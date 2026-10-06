@@ -70,10 +70,12 @@ KCM.SimpleKCM {
     property int cityAppearanceRevision: 0
     property string searchText: ""
     property string appliedSearchText: ""
+    property string homeCitySearchText: ""
     property bool homeExpanded: true
     property bool selectedExpanded: true
     property bool addExpanded: false
     property var cities: cityCatalog.cities
+    property var uniqueCityEntries: cityCatalog.uniqueCities
     property string catalogStatus: cityCatalog.status
     onSearchTextChanged: searchDebounce.restart()
 
@@ -82,14 +84,17 @@ KCM.SimpleKCM {
     }
 
     function setCitySelected(id, selected) {
-        const selectedCities = cfg_selectedCities.slice()
-        const index = selectedCities.indexOf(id)
-        if (selected && index < 0) {
-            selectedCities.push(id)
-        } else if (!selected && index >= 0) {
-            selectedCities.splice(index, 1)
+        const selectedIds = []
+        for (let index = 0; index < cfg_selectedCities.length; index++) {
+            selectedIds.push(cfg_selectedCities[index])
         }
-        cfg_selectedCities = selectedCities
+        const selectedCities = new Set(selectedIds)
+        if (selected) {
+            selectedCities.add(id)
+        } else {
+            selectedCities.delete(id)
+        }
+        cfg_selectedCities = Array.from(selectedCities)
     }
 
     function removeCity(id) {
@@ -97,8 +102,7 @@ KCM.SimpleKCM {
     }
 
     function selectedCityEntries() {
-        return cities.filter(city => cityIsSelected(city.cityId))
-                .sort((left, right) => left.name.localeCompare(right.name))
+        return uniqueCityEntries.filter(city => cityIsSelected(city.cityId))
     }
 
     function cityAppearance(id) {
@@ -162,22 +166,30 @@ KCM.SimpleKCM {
 
     function filteredCities() {
         const query = appliedSearchText.trim().toLocaleLowerCase()
-        return cities.filter(city =>
+        return uniqueCityEntries.filter(city =>
             !query || (city.name + " " + city.country).toLocaleLowerCase().includes(query))
     }
 
+    function matchingHomeCities() {
+        const query = homeCitySearchText.trim().toLocaleLowerCase()
+        if (query.length < 2) {
+            return []
+        }
+        return CityCatalog.searchUniqueCities(uniqueCityEntries, query, 8)
+    }
+
     function homeCoordinates() {
+        if (useManualHome.checked) {
+            return {
+                latitude: homeLatitude.value,
+                longitude: homeLongitude.value
+            }
+        }
         if (Plasmoid.configuration.detectedHomeAvailable
             && Plasmoid.configuration.detectedHomeCoordinatesKnown) {
             return {
                 latitude: Plasmoid.configuration.detectedHomeLatitude,
                 longitude: Plasmoid.configuration.detectedHomeLongitude
-            }
-        }
-        if (useManualHome.checked) {
-            return {
-                latitude: homeLatitude.value,
-                longitude: homeLongitude.value
             }
         }
         return null
@@ -257,26 +269,80 @@ KCM.SimpleKCM {
 
                 Label {
                     Layout.fillWidth: true
+                    Layout.maximumWidth: 700
                     wrapMode: Text.WordWrap
-                    text: i18n("The Home pin uses your system location through GeoClue. The nearest listed city is an approximation; your coordinates are not sent to a geocoding service.")
+                    text: i18n("Use your device's location or choose a city or coordinates for the Home pin. City locations are approximate; your coordinates are not sent to a geocoding service.")
                 }
 
                 Label {
                     Layout.fillWidth: true
+                    Layout.maximumWidth: 700
                     text: i18n("Current coordinates: %1").arg(page.formatHomeCoordinates())
                 }
 
                 Label {
                     Layout.fillWidth: true
+                    Layout.maximumWidth: 700
                     text: i18n("Current nearest city: %1").arg(page.currentNearestCity())
                 }
 
                 CheckBox {
                     id: useManualHome
-                    visible: !Plasmoid.configuration.detectedHomeAvailable
-                    text: i18n("Use manual fallback coordinates")
-                    ToolTip.text: i18n("Use the coordinates below when a system location is unavailable.")
+                    text: i18n("Choose a city or enter a location")
+                    ToolTip.text: i18n("Use a city from the downloaded catalog or enter coordinates instead of your device's current location.")
                     ToolTip.visible: hovered
+                    onToggled: {
+                        if (checked
+                                && Plasmoid.configuration.detectedHomeAvailable
+                                && Plasmoid.configuration.detectedHomeCoordinatesKnown
+                                && page.cfg_manualHomeLatitude === 0
+                                && page.cfg_manualHomeLongitude === 0) {
+                            page.cfg_manualHomeLatitude =
+                                    Plasmoid.configuration.detectedHomeLatitude
+                            page.cfg_manualHomeLongitude =
+                                    Plasmoid.configuration.detectedHomeLongitude
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.preferredWidth: 560
+                    Layout.maximumWidth: 560
+                    Layout.alignment: Qt.AlignLeft
+                    visible: useManualHome.checked
+                    spacing: Kirigami.Units.smallSpacing
+
+                    TextField {
+                        Layout.fillWidth: true
+                        placeholderText: i18n("Type a city or country")
+                        text: page.homeCitySearchText
+                        onTextChanged: page.homeCitySearchText = text
+                        ToolTip.text: i18n("Search the downloaded city list and choose a result to set the Home pin.")
+                        ToolTip.visible: hovered
+                    }
+
+                    ListView {
+                        Layout.fillWidth: true
+                        visible: count > 0
+                        implicitHeight: Math.min(contentHeight, 8 * Kirigami.Units.gridUnit)
+                        implicitWidth: 280
+                        clip: true
+                        model: page.matchingHomeCities()
+
+                        delegate: ItemDelegate {
+                            required property var modelData
+                            width: ListView.view.width
+                            text: modelData.name + " — " + modelData.country
+                            ToolTip.text: i18n("Use %1 as the Home location.").arg(text)
+                            ToolTip.visible: hovered
+                            onClicked: {
+                                page.cfg_manualHomeLatitude = modelData.latitude
+                                page.cfg_manualHomeLongitude = modelData.longitude
+                                page.homeCitySearchText = text
+                                page.cfg_useManualHome = true
+                            }
+                        }
+                    }
                 }
 
                 GridLayout {
@@ -337,14 +403,16 @@ KCM.SimpleKCM {
                 }
 
                 RowLayout {
-                    Layout.fillWidth: true
+                    Layout.preferredWidth: 560
+                    Layout.maximumWidth: 560
+                    Layout.alignment: Qt.AlignLeft
                     visible: useManualHome.checked
 
                     ColumnLayout {
                         Layout.fillWidth: true
 
                         Label {
-                            text: i18n("Fallback latitude")
+                            text: i18n("Latitude")
                         }
 
                         DoubleSpinBox {
@@ -354,7 +422,7 @@ KCM.SimpleKCM {
                             to: 90
                             decimals: 4
                             stepSize: 0.1
-                            ToolTip.text: i18n("Set the fallback Home latitude, from 90° south to 90° north.")
+                            ToolTip.text: i18n("Set the Home latitude, from 90° south to 90° north.")
                             ToolTip.visible: hovered
                         }
                     }
@@ -363,7 +431,7 @@ KCM.SimpleKCM {
                         Layout.fillWidth: true
 
                         Label {
-                            text: i18n("Fallback longitude")
+                            text: i18n("Longitude")
                         }
 
                         DoubleSpinBox {
@@ -373,7 +441,7 @@ KCM.SimpleKCM {
                             to: 180
                             decimals: 4
                             stepSize: 0.1
-                            ToolTip.text: i18n("Set the fallback Home longitude, from 180° west to 180° east.")
+                            ToolTip.text: i18n("Set the Home longitude, from 180° west to 180° east.")
                             ToolTip.visible: hovered
                         }
                     }
@@ -600,6 +668,11 @@ KCM.SimpleKCM {
 
                 Label {
                     Layout.fillWidth: true
+                    text: i18n("Showing %1 cities").arg(cityList.count)
+                }
+
+                Label {
+                    Layout.fillWidth: true
                     text: page.catalogStatus
                     wrapMode: Text.WordWrap
                 }
@@ -617,6 +690,10 @@ KCM.SimpleKCM {
                     implicitHeight: 320
                     clip: true
                     model: page.filteredCities()
+
+                    ScrollBar.vertical: ScrollBar {
+                        policy: ScrollBar.AsNeeded
+                    }
 
                     delegate: CheckDelegate {
                         required property string cityId

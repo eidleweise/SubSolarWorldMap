@@ -21,6 +21,7 @@ PlasmoidItem {
     property real detectedHomeLatitude: Plasmoid.configuration.detectedHomeLatitude
     property real detectedHomeLongitude: Plasmoid.configuration.detectedHomeLongitude
     property var cityEntries: cityCatalog.cities
+    property var uniqueCityEntries: cityCatalog.uniqueCities
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     preferredRepresentation: fullRepresentation
@@ -139,7 +140,7 @@ PlasmoidItem {
                 opacity: Plasmoid.configuration.homePinOpacity
             }
         }
-        readonly property var selectedCityLocations: root.cityEntries.filter(city =>
+        readonly property var selectedCityLocations: root.uniqueCityEntries.filter(city =>
             (Plasmoid.configuration.selectedCities || []).includes(city.cityId))
             .map(city => {
                 const appearance = PinAppearance.forCity(

@@ -7,15 +7,18 @@ are in daylight and darkness.
 
 - See the Sun's current position and the moving day/night boundary.
 - Show or hide the map's date and time, and choose its format and text style.
-- Show your current location automatically, or enter latitude and longitude.
-- Search for cities and add map pins. Set each pin's color and opacity.
+- Show your current location automatically, choose a city, or enter latitude
+  and longitude for the Home pin.
+- Search the alphabetized city list and add map pins. Duplicate catalog entries
+  are combined; distinct places with the same name remain separate.
+- Set each pin's color and opacity.
 - Choose a shape for city pins.
 
 The city list downloads the first time you open Cities settings and is then
 stored on your device for offline use. Automatic location uses the location
-services available on your device (such as GPS or network location). You can
-also enter latitude and longitude yourself. Your coordinates are not sent to a
-geocoding service.
+services available on your device (such as GPS or network location). Or search
+the downloaded city list or enter latitude and longitude to set the Home pin
+yourself. Your coordinates are not sent to a geocoding service.
 
 ## Add the widget
 
@@ -31,7 +34,8 @@ and restarts Plasma Shell so it can load the new version.
 Right-click the widget and choose **Configure SubSolar World Map…**:
 
 - **Date & Time** controls the clock overlay and its formatting.
-- **Cities** controls your Home pin and selected city pins.
+- **Cities** lets you choose automatic location, search for a city or enter
+  coordinates for the Home pin, and manage selected city pins.
 - **Developer** can show the deployment timestamp and open diagnostic logs or
   recent Plasma Shell messages.
 
