@@ -39,20 +39,32 @@ The script builds and tests the widget, installs it for your user, and restarts
 Plasma Shell. You can then add it from the desktop's **Add Widgets** menu as
 described above. No `sudo` is needed.
 
-### Install a release
+### Create a release
 
-Download and extract the source archive from the project's
-[GitHub Releases](https://github.com/eidleweise/SubSolarWorldMap/releases),
-then open a terminal in the extracted folder and run:
+To publish a release, install and authenticate the
+[GitHub CLI](https://cli.github.com/) with `gh auth login`. Update the version
+in both `package/metadata.json` and `CMakeLists.txt`, then commit and push the
+changes on a branch that tracks its remote. With a clean, up-to-date worktree,
+run:
 
 ```sh
-./deploy.sh --restart-shell
+./release.sh
 ```
 
-Releases are source packages, not universal precompiled binaries. The install
-script builds the native Qt plugin for your system, so you need the required
-build tools and KDE/Qt development packages. See
-[docs/HANDOVER.md](docs/HANDOVER.md) for build details.
+The script reads the version from `package/metadata.json` and checks it against
+CMake, builds the project, runs the tests, creates a versioned source archive
+and SHA-256 checksum, then asks before creating the matching `v`-prefixed tag
+and GitHub Release. The archive and checksum are also kept in `build/releases/`.
+Use `./release.sh --dry-run` to build and create the artifacts without
+publishing.
+
+Releases are source packages, not universal precompiled binaries. To install
+one, download and extract the source archive from
+[GitHub Releases](https://github.com/eidleweise/SubSolarWorldMap/releases),
+then run `./deploy.sh --restart-shell` in the extracted folder. This builds
+the native Qt plugin for your system, so you need the required build tools and
+KDE/Qt development packages. See [docs/HANDOVER.md](docs/HANDOVER.md) for
+build details.
 
 ## Settings
 
