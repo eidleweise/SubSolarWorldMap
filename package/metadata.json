@@ -7,7 +7,7 @@
             }
         ],
         "Category": "System Information",
-        "Description": "A live world map showing daylight and nighttime",
+        "Description": "A live world map showing daylight and nighttime. Map imagery adapted from NASA Blue Marble: Next Generation and NASA Black Marble (VIIRS).",
         "Icon": "globe",
         "Id": "org.eidleweise.subsolarworldmap",
         "License": "GPL-3.0-only",

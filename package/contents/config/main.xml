@@ -5,6 +5,12 @@
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
+    <entry name="showDeploymentTimestamp" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="showDateTime" type="Bool">
+      <default>true</default>
+    </entry>
     <entry name="dateFormat" type="Int">
       <default>1</default>
     </entry>
@@ -19,6 +25,51 @@
     </entry>
     <entry name="fontSize" type="Int">
       <default>13</default>
+    </entry>
+    <entry name="selectedCities" type="StringList">
+      <default></default>
+    </entry>
+    <entry name="useManualHome" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="showHomePin" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="homePinColor" type="Int">
+      <default>0</default>
+    </entry>
+    <entry name="homePinOpacity" type="Int">
+      <default>100</default>
+    </entry>
+    <entry name="cityPinAppearance" type="String">
+      <default>{}</default>
+    </entry>
+    <entry name="cityPinStyle" type="Int">
+      <default>0</default>
+    </entry>
+    <entry name="manualHomeLatitude" type="Double">
+      <default>0</default>
+    </entry>
+    <entry name="manualHomeLongitude" type="Double">
+      <default>0</default>
+    </entry>
+    <entry name="detectedHomeName" type="String" hidden="true">
+      <default></default>
+    </entry>
+    <entry name="detectedHomeDistanceKm" type="Double" hidden="true">
+      <default>0</default>
+    </entry>
+    <entry name="detectedHomeAvailable" type="Bool" hidden="true">
+      <default>false</default>
+    </entry>
+    <entry name="detectedHomeLatitude" type="Double" hidden="true">
+      <default>0</default>
+    </entry>
+    <entry name="detectedHomeLongitude" type="Double" hidden="true">
+      <default>0</default>
+    </entry>
+    <entry name="detectedHomeCoordinatesKnown" type="Bool" hidden="true">
+      <default>false</default>
     </entry>
   </group>
 </kcfg>

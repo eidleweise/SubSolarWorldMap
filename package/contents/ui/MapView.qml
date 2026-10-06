@@ -1,14 +1,35 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls as Controls
 import QtQuick.Window
+import "../js/mapProjection.js" as MapProjection
 
 Item {
     id: mapView
 
     property var solarPosition
+    property var homeLocation
+    property var selectedCities: []
+    property int cityPinStyle: 0
+    readonly property var pinPalette: [
+        "#ff7043", "#4fc3f7", "#e53935", "#43a047", "#8e24aa", "#ffffff"
+    ]
+    readonly property var solarPoint: solarPosition
+                                       ? MapProjection.equirectangularPoint(
+                                             solarPosition.latitude,
+                                             solarPosition.longitude,
+                                             width,
+                                             height)
+                                       : null
     readonly property string textureResolution: width * Screen.devicePixelRatio > 2160
                                                 ? "3840x1920" : "2160x1080"
+
+    function pinColor(colorIndex, opacityPercent) {
+        const selected = pinPalette[colorIndex] || pinPalette[0]
+        const rgb = Qt.color(selected)
+        return Qt.rgba(rgb.r, rgb.g, rgb.b, rgb.a * Math.max(0, Math.min(100, opacityPercent)) / 100)
+    }
 
     Image {
         id: dayMap
@@ -81,15 +102,20 @@ Item {
 
     Item {
         id: sunMarker
-        x: mapView.solarPosition
-           ? mapView.width * (mapView.solarPosition.longitude + 180) / 360 - width / 2 : 0
-        y: mapView.solarPosition
-           ? mapView.height * (90 - mapView.solarPosition.latitude) / 180 - height / 2 : 0
+        x: mapView.solarPoint ? mapView.solarPoint.x - width / 2 : 0
+        y: mapView.solarPoint ? mapView.solarPoint.y - height / 2 : 0
         width: 32
         height: 32
         z: 2
         visible: !!mapView.solarPosition
         Accessible.name: qsTr("Subsolar point")
+
+        HoverHandler {
+            id: sunHoverHandler
+        }
+
+        Controls.ToolTip.text: qsTr("The Sun is directly overhead at this point.")
+        Controls.ToolTip.visible: sunHoverHandler.hovered
 
         Rectangle {
             anchors.centerIn: parent
@@ -132,6 +158,124 @@ Item {
             color: "#ffca28"
             border.color: "#fff8d6"
             border.width: 1
+        }
+    }
+
+    Repeater {
+        model: mapView.homeLocation ? [mapView.homeLocation] : []
+
+        delegate: Item {
+            required property var modelData
+            readonly property var point: MapProjection.equirectangularPoint(
+                                             modelData.latitude,
+                                             modelData.longitude,
+                                             mapView.width,
+                                             mapView.height)
+            readonly property real pinX: point.x
+            readonly property real pinY: point.y
+            x: pinX - 15
+            y: pinY - 36
+            width: homeLabel.implicitWidth + 42
+            height: 36
+            z: 3
+            Accessible.name: qsTr("Home: %1").arg(modelData.name)
+
+            HoverHandler {
+                id: homePinHoverHandler
+            }
+
+            Controls.ToolTip.text: qsTr("Home location: %1").arg(modelData.name)
+            Controls.ToolTip.visible: homePinHoverHandler.hovered
+
+            Rectangle {
+                x: 0
+                anchors.top: parent.top
+                width: 30
+                height: 30
+                radius: width / 2
+                color: mapView.pinColor(modelData.colorIndex, modelData.opacity)
+                border.color: mapView.pinColor(5, modelData.opacity)
+                border.width: 2
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "⌂"
+                    color: mapView.pinColor(5, modelData.opacity)
+                    font.pixelSize: 21
+                    font.bold: true
+                }
+            }
+
+            Rectangle {
+                x: 10
+                anchors.top: parent.top
+                anchors.topMargin: 24
+                width: 10
+                height: 10
+                color: mapView.pinColor(modelData.colorIndex, modelData.opacity)
+                rotation: 45
+                z: -1
+            }
+
+            Text {
+                id: homeLabel
+                x: 38
+                y: (parent.height - implicitHeight) / 2
+                text: modelData.name
+                color: "white"
+                style: Text.Outline
+                styleColor: "#cc000000"
+                font.pixelSize: 12
+            }
+        }
+    }
+
+    Repeater {
+        model: mapView.selectedCities
+
+        delegate: Item {
+            required property var modelData
+            readonly property var point: MapProjection.equirectangularPoint(
+                                             modelData.latitude,
+                                             modelData.longitude,
+                                             mapView.width,
+                                             mapView.height)
+            x: point.x
+            y: point.y
+            width: cityLabel.implicitWidth + 18
+            height: 0
+            z: 3
+            Accessible.name: modelData.name
+
+            HoverHandler {
+                id: cityPinHoverHandler
+            }
+
+            Controls.ToolTip.text: qsTr("Selected city: %1").arg(modelData.name)
+            Controls.ToolTip.visible: cityPinHoverHandler.hovered
+
+            Rectangle {
+                x: -6
+                y: -6
+                width: 12
+                height: 12
+                radius: mapView.cityPinStyle === 0 ? width / 2 : 0
+                rotation: mapView.cityPinStyle === 1 ? 45 : 0
+                color: mapView.pinColor(modelData.pinColorIndex, modelData.pinOpacity)
+                border.color: mapView.pinColor(5, modelData.pinOpacity)
+                border.width: 1
+            }
+
+            Text {
+                id: cityLabel
+                x: 10
+                y: -implicitHeight / 2
+                text: modelData.name
+                color: "white"
+                style: Text.Outline
+                styleColor: "#cc000000"
+                font.pixelSize: 12
+            }
         }
     }
 }

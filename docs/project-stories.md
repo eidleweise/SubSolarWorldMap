@@ -68,7 +68,7 @@ Acceptance criteria:
 - the terminator edge is soft and visually continuous,
 - the effect remains stable under resize and reflow.
 
-### Story 5: Display only selected city markers from a configured list
+### Story 5: Display only selected city markers from a configured list (complete)
 
 As a user,
 I want a subset of city markers displayed on the map,
@@ -77,11 +77,13 @@ so that I can focus on the places that matter to me without clutter.
 Acceptance criteria:
 
 - markers are positioned correctly based on latitude and longitude,
+- the Cities settings page can search the downloaded, locally cached city list by city or country,
+- city data is downloaded from the documented, versioned upstream CSV release on first use and cached per user,
+- selected cities persist in applet configuration and only selected entries appear on the map,
 - labels or glyphs are readable,
-- only enabled/selected cities from a configured list are displayed,
 - each marker can show a city name and/or local time.
 
-### Story 6: Configure custom timezone markers and resizable widget layout
+### Story 6: Configure home location and selected city pins (complete)
 
 As a user,
 I want to choose cities from a searchable list and have the widget resize cleanly,
@@ -89,10 +91,17 @@ so that I can monitor the places I care about while fitting the desktop or panel
 
 Acceptance criteria:
 
-- users can search the available city catalog and select or deselect cities,
-- only selected cities are displayed as map markers,
-- selected cities persist across restarts and catalog updates,
-- users can add a custom location when it is not in the catalog,
+- a distinct Home pin uses the system location through GeoClue,
+- the applet requests a fresh GeoClue location at startup and continues periodic updates while running,
+- the Home pin is labeled with the nearest catalog city and country when available,
+- Home pins have configurable color and opacity; each selected city has its own color and opacity settings, with selectable city marker shapes,
+- shift-clicking a selected city's opacity slider applies that opacity to all selected cities while preserving per-city colors,
+- per-city opacity gestures and resulting saved values are recorded in the diagnostics log,
+- the Cities settings page shows the nearest listed city and recalculates it when the location or catalog changes,
+- opening Cities settings reuses the applet's latest location instead of starting another GeoClue watcher,
+- users can configure manual Home coordinates as a fallback when a fresh system location is unavailable, rather than silently using stale saved coordinates,
+- users can search the downloaded city catalog and select or deselect city pins,
+- selected cities persist across restarts,
 - the widget remains readable and proportionally correct when resized.
 
 ### Story 7: Provide a reusable solar math module
@@ -178,7 +187,7 @@ so that I can find current locations without manually replacing the list.
 Acceptance criteria:
 
 - the catalog includes city names, numeric latitude/longitude, and timezone identifiers when available,
-- the widget loads a cached catalog (or packaged fallback) immediately and checks for updates asynchronously,
+- the widget loads the per-user cached catalog immediately and checks for upstream updates asynchronously at startup,
 - a city dataset is downloaded only when the upstream version has changed, not on every launch,
 - failed downloads or invalid updates keep the last known-good catalog and leave the widget usable offline,
 - catalog updates preserve the user's selected cities,

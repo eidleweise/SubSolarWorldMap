@@ -34,6 +34,8 @@ The project combines Qt Quick/QML for the UI, JavaScript for the astronomical lo
 
 - Platform: KDE Plasma 6 / Linux
 - UI framework: Qt Quick + Kirigami
+- Home location: Qt Positioning with the GeoClue provider
+- Catalog runtime: Qt Network, Qt Concurrent, and zlib
 - Build system: CMake
 - Execution environment: Plasma widget loaded in `plasmoidviewer` or installed as a plasmoid
 
@@ -85,13 +87,30 @@ Each marker shall carry:
 
 ### 5.4 Configuration
 
-The plasmoid exposes an Appearance page through Plasma's native applet
-settings. It stores date and time format choices in `Plasmoid.configuration`;
-date formats include short, long, and ISO, while time formats offer 12- or
+The plasmoid exposes a Date & Time page through Plasma's native applet
+settings. It stores the clock visibility and date and time format choices in
+`Plasmoid.configuration`; date formats include short, long, and ISO, while time formats offer 12- or
 24-hour clocks with optional seconds. Users can hide the timezone, show its
 abbreviation or full name, and select the clock font family and size. Future
-configuration work includes selecting active markers, marker visibility, and
-user-defined locations.
+configuration work includes adding custom locations and extending the city
+catalog.
+
+The applet requests a fresh Qt Positioning/GeoClue fix at every startup and
+continues periodic updates while running. Until a valid fix arrives, stale
+saved coordinates are not treated as current; users can enable manual fallback
+coordinates when GeoClue is unavailable. Other pins are selected from the locally cached city
+catalog and persisted as city IDs. Settings show the nearest city name from
+that catalog for the detected Home location; this is an approximation, not
+reverse geocoding. Manual fallback fields are collapsible and displayed side
+by side. Precise Home coordinates are not displayed.
+
+The Developer settings page controls the deployment timestamp and opens the
+diagnostic log or its containing directory. `CityCatalogManager` writes
+timestamped, categorized events to a per-user log, rotates it at about 1 MiB,
+and keeps one previous copy. The settings page can also launch `journalctl` in
+Konsole (when installed) or the configured terminal to inspect the last 15
+minutes of Plasma Shell logs and follow new entries. Konsole is preferred so
+host `journalctl` is available even when the configured terminal is sandboxed.
 
 ## 6. Proposed Architecture
 
@@ -380,20 +399,29 @@ Recommended approach:
 
 ### 11.1 External City Catalog
 
-The [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) is a candidate source for a searchable city catalog. It includes city coordinates and timezone identifiers. Its README currently reports more than 153,000 cities and towns, and the full JSON export is large (271 MB uncompressed, 18 MB compressed); its managed REST API requires an API key. The full export should therefore not be fetched and parsed on every widget launch.
+The catalog manager downloads the latest versioned `csv-cities.csv.gz` release
+asset of the [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database)
+on first use; it does not use the managed API or bundle city data with the
+plasmoid. It keeps a per-user cache under the XDG data directory. On startup,
+the cached copy loads immediately and the manager checks GitHub release
+metadata, rate-limited to once every six hours. A newer archive is downloaded
+in the background, SHA-256 verified using the release asset digest, gzip
+decompressed and parsed off the UI thread. Only valid records with population
+of at least 10,000 are retained. A `QSaveFile` atomically replaces the cache
+only after parsing succeeds; failed network requests or invalid data leave the
+last good cache usable. On first use, the city list remains unavailable until
+the initial download completes.
 
-Recommended first implementation:
-
-1. Use a versioned downloadable release export rather than making the managed API a runtime dependency.
-2. On startup, load the last successfully cached catalog immediately (or a small packaged fallback if no cache exists).
-3. Check for a newer release asynchronously, without delaying the widget or map display.
-4. Download and validate an update only when a newer version is available, then atomically replace the cached catalog. Keep the last known-good catalog if the network, download, or validation fails.
-5. Search/filter the catalog incrementally in the city picker; do not create map markers for every catalog entry.
-6. Persist the user's selected city IDs separately from the catalog. An update must not reset their selection; unresolved selections should be retained and surfaced rather than silently discarded.
+Only selected city IDs are rendered as pins. Selection is stored separately
+in Plasma applet configuration, so catalog updates do not reset it. Catalog
+filtering happens in the settings page and the list view virtualizes rows.
 
 Only selected cities are rendered as map pins. Their latitude/longitude remains the positioning source of truth, with normalized x/y derived from the current map dimensions. Convert upstream coordinate strings to numbers and validate coordinate ranges before use.
 
-The source database is licensed under ODbL 1.0 and requires attribution. Any redistributed snapshot, transformed catalog, or derived database must be reviewed for applicable share-alike obligations. Provide attribution in the project and retain relevant license information if the data is bundled or cached for redistribution.
+The source database is licensed under ODbL 1.0 and requires attribution. The
+downloaded, filtered cache is a transformed database; review ODbL share-alike
+obligations before redistributing it. Provide attribution and retain relevant
+license information.
 
 ## 12. Quality and Performance
 
@@ -448,9 +476,9 @@ Important reliability concerns:
 
 ### Phase 4: Marker System
 
-- add city markers,
+- add Home and selected city markers,
 - map lat/lon to screen space,
-- allow configurable marker sets.
+- allow configuration of selected city pins and a manual Home fallback.
 
 ### Phase 5: Polish and Packaging
 

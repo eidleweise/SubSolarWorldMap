@@ -53,6 +53,12 @@ trap 'rm -rf "$staging_dir"' EXIT
 cp -a "$ROOT_DIR/package/." "$staging_dir/"
 cp "$BUILD_DIR/generated/buildInfo.js" "$staging_dir/contents/js/buildInfo.js"
 printf 'var deployTimestamp = "%s"\n' "$DEPLOY_TIMESTAMP" >> "$staging_dir/contents/js/buildInfo.js"
+catalog_module_dir="$staging_dir/contents/lib/SubSolar/CityCatalog"
+mkdir -p "$catalog_module_dir"
+cp "$BUILD_DIR/qml/SubSolar/CityCatalog/qmldir" \
+    "$BUILD_DIR/qml/SubSolar/CityCatalog/libcitycatalogplugin.so" \
+    "$BUILD_DIR/libcitycatalogmanager.so" \
+    "$catalog_module_dir/"
 
 installed_packages="$(kpackagetool6 --type Plasma/Applet --list)"
 if grep -Fqx "$PLASMOID_ID" <<<"$installed_packages"; then

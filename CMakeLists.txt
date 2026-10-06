@@ -3,6 +3,31 @@ cmake_minimum_required(VERSION 3.16)
 project(SubSolarWorldMap VERSION 0.1.0)
 
 include(GNUInstallDirs)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Qml)
+find_package(ZLIB REQUIRED)
+set(CMAKE_AUTOMOC ON)
+qt_policy(SET QTP0001 NEW)
+
+qt_add_qml_module(citycatalogmanager
+    URI SubSolar.CityCatalog
+    VERSION 1.0
+    PLUGIN_TARGET citycatalogplugin
+    CLASS_NAME CityCatalogPlugin
+    OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/qml/SubSolar/CityCatalog"
+    SOURCES
+        package/contents/citycatalog/citycatalogmanager.cpp
+        package/contents/citycatalog/citycatalogmanager.h
+)
+target_link_libraries(citycatalogmanager PRIVATE
+    Qt6::Concurrent
+    Qt6::Network
+    ZLIB::ZLIB
+)
+target_include_directories(citycatalogmanager PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/package/contents/citycatalog")
+set_target_properties(citycatalogmanager citycatalogplugin PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
+)
 
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S %z")
 configure_file(
@@ -18,6 +43,21 @@ if(NODE_EXECUTABLE)
         NAME solar-math
         COMMAND "${NODE_EXECUTABLE}" --test
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/solarMath.test.js"
+    )
+    add_test(
+        NAME city-catalog
+        COMMAND "${NODE_EXECUTABLE}" --test
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/cityCatalog.test.js"
+    )
+    add_test(
+        NAME map-projection
+        COMMAND "${NODE_EXECUTABLE}" --test
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/mapProjection.test.js"
+    )
+    add_test(
+        NAME pin-appearance
+        COMMAND "${NODE_EXECUTABLE}" --test
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/pinAppearance.test.js"
     )
 endif()
 
@@ -48,9 +88,17 @@ endif()
 install(FILES package/metadata.json
     DESTINATION "${PLASMOID_INSTALL_DIR}")
 install(DIRECTORY package/contents/ui package/contents/js package/contents/config
-    DESTINATION "${PLASMOID_INSTALL_DIR}/contents")
+    DESTINATION "${PLASMOID_INSTALL_DIR}/contents"
+    PATTERN "*.in" EXCLUDE)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generated/buildInfo.js"
+    DESTINATION "${PLASMOID_INSTALL_DIR}/contents/js")
 install(DIRECTORY package/contents/shaders
     DESTINATION "${PLASMOID_INSTALL_DIR}/contents")
+install(TARGETS citycatalogmanager citycatalogplugin
+    LIBRARY DESTINATION "${PLASMOID_INSTALL_DIR}/contents/lib/SubSolar/CityCatalog")
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/qml/SubSolar/CityCatalog/qmldir"
+    DESTINATION "${PLASMOID_INSTALL_DIR}/contents/lib/SubSolar/CityCatalog")
 install(FILES
     package/contents/assets/day/world.equirectangular-2160x1080.png
     package/contents/assets/day/world.equirectangular-3840x1920.png

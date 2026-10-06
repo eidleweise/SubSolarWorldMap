@@ -22,6 +22,12 @@ trap 'rm -rf "$staging_dir"' EXIT
 cp -a "$ROOT_DIR/package/." "$staging_dir/"
 cp "$BUILD_DIR/generated/buildInfo.js" "$staging_dir/contents/js/buildInfo.js"
 printf 'var deployTimestamp = "%s"\n' "$DEPLOY_TIMESTAMP" >> "$staging_dir/contents/js/buildInfo.js"
+catalog_module_dir="$staging_dir/contents/lib/SubSolar/CityCatalog"
+mkdir -p "$catalog_module_dir"
+cp "$BUILD_DIR/qml/SubSolar/CityCatalog/qmldir" \
+    "$BUILD_DIR/qml/SubSolar/CityCatalog/libcitycatalogplugin.so" \
+    "$BUILD_DIR/libcitycatalogmanager.so" \
+    "$catalog_module_dir/"
 
 if command -v distrobox >/dev/null 2>&1; then
     run_in_viewer() {

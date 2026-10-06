@@ -2,7 +2,7 @@
 
 **Project Name:** SubSolar World Map  
 **Type:** KDE Plasma 6 Plasmoid / Desktop Widget  
-**Core Functionality:** Real-time equirectangular world map displaying solar day/night cycles (terminator line); customizable timezone markers are planned follow-up work.  
+**Core Functionality:** Real-time equirectangular world map displaying solar day/night cycles (terminator line), a GeoClue-derived Home pin, and selectable city markers.
 **Target Platform:** KDE Plasma 6 (Linux)  
 
 ---
@@ -54,7 +54,7 @@ SubSolar-World-Map/
 1. **Solar Terminator Line:** Calculated via `solarMath.js` using UTC date/time to find the subsolar latitude ($\delta$) and longitude ($\lambda_0$). 
 2. **Shader Rendering:** `MapView.qml` uses a `ShaderEffect` to mix the day and night textures along the curve defined by the equation:
    $$\sin(\text{lat}) \cdot \sin(\delta) + \cos(\text{lat}) \cdot \cos(\delta) \cdot \cos(\text{lon} - \lambda_0) = 0$$
-3. **Subsolar Marker and Clock:** `MapView.qml` positions a small sun at the calculated subsolar coordinates; `main.qml` overlays the current local date and time at the top-center of the map, with configurable date, time, and timezone formats.
+3. **Subsolar Marker and Clock:** `MapView.qml` positions a small sun at the calculated subsolar coordinates; `main.qml` optionally overlays the current local date and time at the top-center of the map, with configurable visibility, date, time, and timezone formats.
 4. **Location Markers:** Latitude ($[-90, 90]$) and Longitude ($[-180, 180]$) coordinates are mapped linearly to $X/Y$ percentages on the equirectangular projection image.
 
 Both textures cover the complete 2:1 longitude/latitude extent. The 2160x1080
@@ -105,8 +105,8 @@ applet. Check for shader compilation and applet QML errors separately.
 
 1. **Completed: Foundation and rendering:** Plasma package, static map, compiled day/night shader, and live solar uniforms.
 2. **Completed: Solar model:** UTC solar position updates every 30 seconds, with deterministic math tests.
-3. **Next: City markers:** Map latitude/longitude coordinates to the equirectangular view.
-4. **Next: Configuration:** Add user configuration for selected and custom locations.
+3. **Completed: City markers:** A Cities settings page selects catalog entries and renders them alongside a distinct GeoClue-derived Home pin, with optional manual fallback coordinates.
+4. **Completed: City data:** The catalog downloads on first use, loads from the per-user cache, and refreshes asynchronously from upstream. Next, consider user-defined locations and migration if upstream IDs change.
 
 ## 7. Tips for Using Black Marble with Blue Marble
 * Pixel Alignment: Ensure both textures use the exact same base projection coordinates ($-180^\circ$ to $+180^\circ$ Longitude, $-90^\circ$ to $+90^\circ$ Latitude). NASA's standard 8K or 10K resolution Black Marble files pair directly with Blue Marble Next Generation images without needing manual warping or repositioning.

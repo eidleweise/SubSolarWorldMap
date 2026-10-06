@@ -8,22 +8,89 @@ import org.kde.plasma.plasmoid
 
 import "../js/solarMath.js" as SolarMath
 import "../js/buildInfo.js" as BuildInfo
+import "../js/cityCatalog.js" as CityCatalog
+import "../js/pinAppearance.js" as PinAppearance
+import QtPositioning
+import "../lib/SubSolar/CityCatalog"
 
 PlasmoidItem {
     id: root
 
-    property bool aboutVisible: false
+    property bool homeLocationAvailable: false
+    property real detectedHomeLatitude: Plasmoid.configuration.detectedHomeLatitude
+    property real detectedHomeLongitude: Plasmoid.configuration.detectedHomeLongitude
+    property var cityEntries: cityCatalog.cities
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     preferredRepresentation: fullRepresentation
 
-    Plasmoid.contextualActions: [
-        PlasmaCore.Action {
-            text: qsTr("About SubSolar World Map")
-            icon.name: "help-about"
-            onTriggered: root.aboutVisible = true
+    CityCatalogManager {
+        id: cityCatalog
+
+        onCitiesChanged: root.updateDetectedHomeName()
+        Component.onCompleted: start()
+    }
+
+    function updateDetectedHomeName() {
+        if (!homeLocationAvailable || cityEntries.length === 0) {
+            cityCatalog.logEvent("location",
+                                 "Nearest-city update deferred; location available: "
+                                 + homeLocationAvailable + ", catalog records: "
+                                 + cityEntries.length)
+            return
         }
-    ]
+        const nearestCity = CityCatalog.nearestCity(
+            cityEntries,
+            detectedHomeLatitude,
+            detectedHomeLongitude)
+        Plasmoid.configuration.detectedHomeName =
+            qsTr("%1, %2").arg(nearestCity.name).arg(nearestCity.country)
+        Plasmoid.configuration.detectedHomeDistanceKm = nearestCity.distanceKm
+        cityCatalog.logEvent("location",
+                             "Nearest catalog city updated: "
+                             + nearestCity.name + ", " + nearestCity.country
+                             + " | distance (km): " + Math.round(nearestCity.distanceKm))
+    }
+
+    PositionSource {
+        id: homePositionSource
+        active: true
+        updateInterval: 60000
+
+        Component.onCompleted: {
+            cityCatalog.logEvent("location", "Requesting a fresh GeoClue position at startup")
+            Plasmoid.configuration.detectedHomeAvailable = false
+            update()
+        }
+
+        onPositionChanged: {
+            if (!position.coordinate.isValid) {
+                cityCatalog.logEvent("location/error",
+                                     "GeoClue delivered an invalid coordinate; waiting for a valid position.")
+                return
+            }
+            root.detectedHomeLatitude = position.coordinate.latitude
+            root.detectedHomeLongitude = position.coordinate.longitude
+            root.homeLocationAvailable = true
+            Plasmoid.configuration.detectedHomeAvailable = true
+            Plasmoid.configuration.detectedHomeLatitude = position.coordinate.latitude
+            Plasmoid.configuration.detectedHomeLongitude = position.coordinate.longitude
+            Plasmoid.configuration.detectedHomeCoordinatesKnown = true
+            cityCatalog.logEvent("location",
+                                 "GeoClue position update received; accuracy (m): "
+                                 + position.horizontalAccuracy)
+            root.updateDetectedHomeName()
+        }
+
+        onSourceErrorChanged: {
+            if (sourceError !== PositionSource.NoError) {
+                root.homeLocationAvailable = false
+                Plasmoid.configuration.detectedHomeAvailable = false
+                cityCatalog.logEvent("location/error",
+                                     "GeoClue error during location check: " + sourceError)
+            }
+        }
+    }
 
     fullRepresentation: Item {
         id: fullView
@@ -37,6 +104,57 @@ PlasmoidItem {
         property var currentDateTime: new Date()
         property var displayDateTime: currentDateTime
         property var solarPosition: SolarMath.subsolarPoint(currentDateTime)
+        readonly property var homeLocation: {
+            if (Plasmoid.configuration.showHomePin === false) {
+                return null
+            }
+            if (root.homeLocationAvailable) {
+                const nearestCity = root.cityEntries.length > 0
+                                    ? CityCatalog.nearestCity(
+                                          root.cityEntries,
+                                          root.detectedHomeLatitude,
+                                          root.detectedHomeLongitude)
+                                    : null
+                return {
+                    latitude: root.detectedHomeLatitude,
+                    longitude: root.detectedHomeLongitude,
+                    name: nearestCity
+                          ? nearestCity.name + ", " + nearestCity.country
+                          : qsTr("Home"),
+                    colorIndex: Plasmoid.configuration.homePinColor,
+                    opacity: Plasmoid.configuration.homePinOpacity
+                }
+            }
+            if (Plasmoid.configuration.useManualHome) {
+                const latitude = Plasmoid.configuration.manualHomeLatitude
+                const longitude = Plasmoid.configuration.manualHomeLongitude
+                const nearestCity = root.cityEntries.length > 0
+                                    ? CityCatalog.nearestCity(root.cityEntries, latitude, longitude)
+                                    : null
+                return {
+                    latitude: latitude,
+                    longitude: longitude,
+                    name: nearestCity
+                          ? nearestCity.name + ", " + nearestCity.country
+                          : qsTr("Home"),
+                    colorIndex: Plasmoid.configuration.homePinColor,
+                    opacity: Plasmoid.configuration.homePinOpacity
+                }
+            }
+            return null
+        }
+        readonly property var selectedCityLocations: root.cityEntries.filter(city =>
+            (Plasmoid.configuration.selectedCities || []).includes(city.cityId))
+            .map(city => {
+                const appearance = PinAppearance.forCity(
+                    Plasmoid.configuration.cityPinAppearance,
+                    city.cityId)
+                return Object.assign({}, city, {
+                    pinColorIndex: appearance.color,
+                    pinOpacity: appearance.opacity
+                })
+            })
+        readonly property int selectedCityPinStyle: Plasmoid.configuration.cityPinStyle
 
         function updateSolarPosition() {
             const now = new Date()
@@ -56,6 +174,9 @@ PlasmoidItem {
             width: Math.min(fullView.width, fullView.height * 2)
             height: width / 2
             solarPosition: fullView.solarPosition
+            homeLocation: fullView.homeLocation
+            selectedCities: fullView.selectedCityLocations
+            cityPinStyle: fullView.selectedCityPinStyle
         }
 
         Rectangle {
@@ -66,9 +187,17 @@ PlasmoidItem {
             width: dateTimeLabel.implicitWidth + 20
             height: 30
             radius: height / 2
+            visible: Plasmoid.configuration.showDateTime !== false
             color: "#cc20252a"
             border.color: "#55ffffff"
             z: 3
+
+            HoverHandler {
+                id: dateTimeHoverHandler
+            }
+
+            Controls.ToolTip.text: qsTr("Current local date and time. Change its display in Date & Time settings.")
+            Controls.ToolTip.visible: dateTimeHoverHandler.hovered
 
             Text {
                 id: dateTimeLabel
@@ -111,6 +240,7 @@ PlasmoidItem {
             anchors.bottom: mapViewContent.bottom
             anchors.rightMargin: 8
             anchors.bottomMargin: 8
+            visible: Plasmoid.configuration.showDeploymentTimestamp !== false
             color: "#ff3030"
             style: Text.Outline
             styleColor: "#cc000000"
@@ -129,92 +259,11 @@ PlasmoidItem {
         Timer {
             interval: 1000
             repeat: true
-            running: Plasmoid.configuration.timeFormat === 2
-                     || Plasmoid.configuration.timeFormat === 3
+            running: Plasmoid.configuration.showDateTime !== false
+                     && (Plasmoid.configuration.timeFormat === 2
+                         || Plasmoid.configuration.timeFormat === 3)
             onTriggered: fullView.updateClock()
         }
 
-        Rectangle {
-            id: aboutOverlay
-            anchors.fill: parent
-            color: "#99000000"
-            visible: root.aboutVisible
-            z: 10
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: mouse => mouse.accepted = true
-            }
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: Math.min(400, parent.width - 24)
-                height: Math.min(parent.height - 24, aboutContent.implicitHeight + 32)
-                radius: 8
-                color: "#f020252a"
-                border.color: "#99ffffff"
-
-                ColumnLayout {
-                    id: aboutContent
-                    anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 8
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Controls.Label {
-                            Layout.fillWidth: true
-                            text: qsTr("About SubSolar World Map")
-                            font.bold: true
-                            font.pixelSize: 16
-                        }
-
-                        Controls.Button {
-                            text: qsTr("Close")
-                            onClicked: root.aboutVisible = false
-                        }
-                    }
-
-                    Controls.Label {
-                        Layout.fillWidth: true
-                        text: qsTr("A real-time world map showing daylight and nighttime based on the current position of the Sun.")
-                        wrapMode: Text.WordWrap
-                    }
-
-                    Controls.Label {
-                        Layout.fillWidth: true
-                        text: qsTr("Version 0.1.0 · Licensed under GPL-3.0-only")
-                              + "\n"
-                              + qsTr("Build date: %1").arg(BuildInfo.buildTimestamp)
-                        wrapMode: Text.WordWrap
-                    }
-
-                    Controls.Label {
-                        Layout.fillWidth: true
-                        text: "<a href=\"https://github.com/eidleweise/SubSolarWorldMap\">"
-                              + qsTr("Project website")
-                              + "</a>"
-                        textFormat: Text.RichText
-                        onLinkActivated: link => Qt.openUrlExternally(link)
-                    }
-
-                    Controls.Label {
-                        Layout.fillWidth: true
-                        text: qsTr("Map imagery adapted from ")
-                              + "<a href=\"https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography-bathymetry/\">"
-                              + qsTr("NASA Blue Marble: Next Generation")
-                              + "</a>"
-                              + qsTr(" and ")
-                              + "<a href=\"https://www.earthdata.nasa.gov/data/projects/black-marble\">"
-                              + qsTr("NASA Black Marble (VIIRS)")
-                              + "</a>."
-                        textFormat: Text.RichText
-                        wrapMode: Text.WordWrap
-                        onLinkActivated: link => Qt.openUrlExternally(link)
-                    }
-                }
-            }
-        }
     }
 }
