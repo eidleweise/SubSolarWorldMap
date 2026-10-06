@@ -48,7 +48,7 @@ Acceptance criteria:
 
 - the app computes subsolar latitude and longitude from the current UTC time,
 - the terminator updates every 30 seconds,
-- a sun icon marks the subsolar point and the current local date/time appears in a top-center overlay on the map,
+- a sun icon marks the subsolar point and the current local date/time appear in a top-center overlay on the map, with configurable date, time, and timezone formats,
 - the result is consistent across repeated checks over a few minutes.
 
 Implementation note: `solarMath.js` uses the UTC instant represented by a
@@ -56,7 +56,7 @@ JavaScript `Date`; it does not depend on the machine's local timezone. The
 solar module has deterministic tests for equinox/solstice positions, longitude
 movement, equivalent timezone representations, and invalid input.
 
-### Story 4: Blend the map smoothly across day and night regions
+### Story 4: Blend the map smoothly across day and night regions (complete)
 
 As a user,
 I want a smooth visual transition between day and night,

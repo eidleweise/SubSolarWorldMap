@@ -1,3 +1,4 @@
 .pragma library
 
 var buildTimestamp = "@BUILD_TIMESTAMP@"
+var deployTimestamp = "Not deployed"

@@ -54,7 +54,7 @@ SubSolar-World-Map/
 1. **Solar Terminator Line:** Calculated via `solarMath.js` using UTC date/time to find the subsolar latitude ($\delta$) and longitude ($\lambda_0$). 
 2. **Shader Rendering:** `MapView.qml` uses a `ShaderEffect` to mix the day and night textures along the curve defined by the equation:
    $$\sin(\text{lat}) \cdot \sin(\delta) + \cos(\text{lat}) \cdot \cos(\delta) \cdot \cos(\text{lon} - \lambda_0) = 0$$
-3. **Subsolar Marker and Clock:** `MapView.qml` positions a small sun at the calculated subsolar coordinates; `main.qml` overlays the current local date and time at the top-center of the map.
+3. **Subsolar Marker and Clock:** `MapView.qml` positions a small sun at the calculated subsolar coordinates; `main.qml` overlays the current local date and time at the top-center of the map, with configurable date, time, and timezone formats.
 4. **Location Markers:** Latitude ($[-90, 90]$) and Longitude ($[-180, 180]$) coordinates are mapped linearly to $X/Y$ percentages on the equirectangular projection image.
 
 Both textures cover the complete 2:1 longitude/latitude extent. The 2160x1080

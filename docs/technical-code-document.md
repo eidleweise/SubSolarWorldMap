@@ -85,14 +85,13 @@ Each marker shall carry:
 
 ### 5.4 Configuration
 
-The app should allow users to configure the active marker list, marker visibility, and visual preferences without rebuilding the project.
-
-Potential future config surfaces include:
-
-- metadata.json entries,
-- a QML settings dialog,
-- JSON-backed user preferences,
-- a user-defined list of selected cities from a default catalog.
+The plasmoid exposes an Appearance page through Plasma's native applet
+settings. It stores date and time format choices in `Plasmoid.configuration`;
+date formats include short, long, and ISO, while time formats offer 12- or
+24-hour clocks with optional seconds. Users can hide the timezone, show its
+abbreviation or full name, and select the clock font family and size. Future
+configuration work includes selecting active markers, marker visibility, and
+user-defined locations.
 
 ## 6. Proposed Architecture
 
@@ -301,7 +300,11 @@ The plasmoid computes an initial position at startup and refreshes it every
 so the terminator tracks solar motion without regenerating textures. The map
 also places a small sun marker at the same subsolar latitude/longitude using
 the map's 2:1 equirectangular coordinates. A header displays the system-local
-date and time and refreshes with the solar position.
+date and time with configurable date, time, and timezone formats, and refreshes
+with the solar position.
+When either seconds-enabled time format is selected, a separate one-second
+timer refreshes only the displayed clock; solar calculations remain on the
+30-second timer.
 
 Run the deterministic math tests with `node --test tests/solarMath.test.js`, or
 use `ctest --test-dir build --output-on-failure` after configuring CMake with

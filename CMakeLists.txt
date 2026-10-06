@@ -47,7 +47,7 @@ endif()
 
 install(FILES package/metadata.json
     DESTINATION "${PLASMOID_INSTALL_DIR}")
-install(DIRECTORY package/contents/ui package/contents/js
+install(DIRECTORY package/contents/ui package/contents/js package/contents/config
     DESTINATION "${PLASMOID_INSTALL_DIR}/contents")
 install(DIRECTORY package/contents/shaders
     DESTINATION "${PLASMOID_INSTALL_DIR}/contents")

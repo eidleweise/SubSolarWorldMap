@@ -9,7 +9,9 @@ Inspired by classic mechanical world clocks, **SubSolar World Map** renders an e
 ## Features
 
 - **Live Solar Map:** The subsolar point is calculated from UTC and refreshed every 30 seconds.
-- **Sun Position and Local Clock:** A sun marker shows the current subsolar point, with the local date and time overlaid at the top-center of the map.
+- **Sun Position and Local Clock:** A sun marker shows the current subsolar point, with the local date and time overlaid at the top-center of the map; timezone display is configurable.
+- **Deployment Debug Timestamp:** A red timestamp at the lower-right of the map shows when the currently installed package was deployed.
+- **Clock Format Settings:** Choose common date and time formats in the widget's context-menu configuration.
 - **Day/Night Imagery:** Matched 2:1 equirectangular day and night maps are blended in a Qt Quick shader with a soft solar terminator.
 - **Proportional Scaling:** The compact widget and map use a 2:1 ratio, and the map keeps its projection when resized while selecting higher-resolution textures for large/high-DPI views.
 - **Transparent Widget Background:** Plasma's default applet background is hidden so the map is the visible widget content.
@@ -42,26 +44,45 @@ metadata must declare
 mark it unsupported.
 
 ```bash
-./deploy.sh
+./deploy.sh --restart-shell
 ```
+
+The option restarts Plasma Shell after installation so the running desktop
+loads the updated applet; the panel and desktop may briefly disappear during
+the restart. To install without restarting, use `./deploy.sh`, then run
+`systemctl --user restart plasma-plasmashell.service` when you want the desktop
+to load the new version. This does not require logging out.
 
 After installation, right-click the desktop, enter edit mode or choose **Add
 Widgets**, search for **SubSolar World Map**, then drag the widget onto the
 desktop. Plasma's panel widget picker may need to be closed and reopened to
 refresh its list.
 
-### Previewing with Plasma's Plasmoid Viewer
+To change the clock display, right-click the widget and choose **Configure
+SubSolar World Map…**. The Appearance page provides date choices (short, long,
+or ISO) and 12-/24-hour time choices, with optional seconds. The timezone can
+be hidden, shown as a short abbreviation, or shown by its full name. The clock
+font family and size can also be changed.
+The font-family dropdown can be filtered by typing part of a font name
+directly into it; a separate preview shows the selected family at the chosen
+size.
 
-To build and launch the applet in Plasma's standalone viewer without installing
-it, run:
+### Previewing in a Standalone Plasma Window
+
+To build and install or upgrade the applet for your user, then preview it in a
+resizable standalone Plasma window, run:
 
 ```bash
 ./view.sh
 ```
 
-This uses `plasmoidviewer` in the `fedora-dev` Distrobox when `distrobox` is
-available. Set `VIEWER_CONTAINER` to use a different container. Without
-Distrobox, it runs `plasmoidviewer6` or `plasmoidviewer` directly on the host.
+This uses `plasmawindowed` and `kpackagetool6` in the `fedora-dev` Distrobox
+when `distrobox` is available. Set `VIEWER_CONTAINER` to use a different
+container. Without Distrobox, those commands must be available on the host.
+The standalone window is useful for checking rendering and resizing, but does
+not provide Plasma Shell's applet context menu or settings dialog. Test those
+on the desktop by right-clicking the installed widget; logging out is not
+required.
 
 ### Moving and Resizing on the Desktop
 
