@@ -174,6 +174,10 @@ PlasmoidItem {
             homeLocation: fullView.homeLocation
             selectedCities: fullView.selectedCityLocations
             cityPinStyle: fullView.selectedCityPinStyle
+            dateFormat: Plasmoid.configuration.dateFormat
+            timeFormat: Plasmoid.configuration.timeFormat
+            timezoneFormat: Plasmoid.configuration.timezoneFormat
+            localeName: Qt.locale().name
         }
 
         Rectangle {
@@ -188,13 +192,6 @@ PlasmoidItem {
             color: "#cc20252a"
             border.color: "#55ffffff"
             z: 3
-
-            HoverHandler {
-                id: dateTimeHoverHandler
-            }
-
-            Controls.ToolTip.text: qsTr("Current local date and time. Change its display in Date & Time settings.")
-            Controls.ToolTip.visible: dateTimeHoverHandler.hovered
 
             Text {
                 id: dateTimeLabel

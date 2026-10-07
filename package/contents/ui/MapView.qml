@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Window
 import "../js/mapProjection.js" as MapProjection
+import "../js/clockFormat.js" as ClockFormat
 
 Item {
     id: mapView
@@ -12,6 +13,12 @@ Item {
     property var homeLocation
     property var selectedCities: []
     property int cityPinStyle: 0
+    // Clock format config threaded in from main.qml (MapView is a plain Item and
+    // does not have the Plasmoid attached object available).
+    property int dateFormat: 0
+    property int timeFormat: 0
+    property int timezoneFormat: 0
+    property string localeName: Qt.locale().name
     readonly property var pinPalette: [
         "#ff7043", "#4fc3f7", "#e53935", "#43a047", "#8e24aa", "#ffffff"
     ]
@@ -184,7 +191,17 @@ Item {
                 id: homePinHoverHandler
             }
 
+            // Home pin has no IANA timezone (derived from GeoClue/manual
+            // coordinates), so the clock line falls back to system-local time.
             Controls.ToolTip.text: qsTr("Home location: %1").arg(modelData.name)
+                                    + "\n"
+                                    + ClockFormat.formatLocationClock(
+                                          new Date(),
+                                          mapView.dateFormat,
+                                          mapView.timeFormat,
+                                          mapView.timezoneFormat,
+                                          mapView.localeName,
+                                          "")
             Controls.ToolTip.visible: homePinHoverHandler.hovered
 
             Rectangle {
@@ -251,7 +268,17 @@ Item {
                 id: cityPinHoverHandler
             }
 
+            // City pins carry an IANA timezone from the catalog; an empty value
+            // falls back gracefully to system-local time inside the helper.
             Controls.ToolTip.text: qsTr("Selected city: %1").arg(modelData.name)
+                                    + "\n"
+                                    + ClockFormat.formatLocationClock(
+                                          new Date(),
+                                          mapView.dateFormat,
+                                          mapView.timeFormat,
+                                          mapView.timezoneFormat,
+                                          mapView.localeName,
+                                          modelData.timezone)
             Controls.ToolTip.visible: cityPinHoverHandler.hovered
 
             Rectangle {

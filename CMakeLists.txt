@@ -64,6 +64,11 @@ if(NODE_EXECUTABLE)
         COMMAND "${NODE_EXECUTABLE}" --test
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/pinAppearance.test.js"
     )
+    add_test(
+        NAME clock-format
+        COMMAND "${NODE_EXECUTABLE}" --test
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/clockFormat.test.js"
+    )
 endif()
 
 set(PLASMOID_ID org.eidleweise.subsolarworldmap)
