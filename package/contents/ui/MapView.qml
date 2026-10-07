@@ -264,22 +264,37 @@ Item {
             z: 3
             Accessible.name: modelData.name
 
-            HoverHandler {
-                id: cityPinHoverHandler
-            }
+            // The delegate Item has height 0 and draws its marker/label at
+            // negative offsets, so a delegate-level HoverHandler would never
+            // register a hover. Attach the hover + tooltip to a dedicated
+            // hit-area that actually covers the drawn pin dot and label,
+            // without moving the visible marker or label.
+            Rectangle {
+                id: cityPinHitArea
+                x: -6
+                y: -cityLabel.implicitHeight / 2
+                width: 16 + cityLabel.implicitWidth
+                height: Math.max(12, cityLabel.implicitHeight)
+                color: "transparent"
 
-            // City pins carry an IANA timezone from the catalog; an empty value
-            // falls back gracefully to system-local time inside the helper.
-            Controls.ToolTip.text: qsTr("Selected city: %1").arg(modelData.name)
-                                    + "\n"
-                                    + ClockFormat.formatLocationClock(
-                                          new Date(),
-                                          mapView.dateFormat,
-                                          mapView.timeFormat,
-                                          mapView.timezoneFormat,
-                                          mapView.localeName,
-                                          modelData.timezone)
-            Controls.ToolTip.visible: cityPinHoverHandler.hovered
+                HoverHandler {
+                    id: cityPinHoverHandler
+                }
+
+                // City pins carry an IANA timezone from the catalog; an empty
+                // value falls back gracefully to system-local time inside the
+                // helper.
+                Controls.ToolTip.text: qsTr("Selected city: %1").arg(modelData.name)
+                                        + "\n"
+                                        + ClockFormat.formatLocationClock(
+                                              new Date(),
+                                              mapView.dateFormat,
+                                              mapView.timeFormat,
+                                              mapView.timezoneFormat,
+                                              mapView.localeName,
+                                              modelData.timezone)
+                Controls.ToolTip.visible: cityPinHoverHandler.hovered
+            }
 
             Rectangle {
                 x: -6
