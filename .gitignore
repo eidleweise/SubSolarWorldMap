@@ -67,6 +67,9 @@ compile_commands.json
 *.swp
 *~
 
+# Agent workflow task artifacts
+/.agents/
+
 # Operating system files
 .DS_Store
 Thumbs.db

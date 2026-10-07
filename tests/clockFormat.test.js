@@ -112,3 +112,67 @@ test("invalid IANA id falls back without throwing or Invalid Date", () => {
     assert.ok(!result.includes("Invalid Date"))
     assert.match(result, /^\d{4}-\d{2}-\d{2}  ·  \d{2}:\d{2}$/)
 })
+
+// --- Intl-absent environment (mirrors the real Plasma/Qt QML JS engine) ------
+//
+// The QML JS engine does NOT define ECMAScript `Intl`, so load the library in a
+// VM context WITHOUT `Intl` to prove formatLocationClock still never throws,
+// never returns empty, and never produces "Invalid Date". A `systemLocalClock`
+// stand-in mimics the Qt-based badge formatter injected from QML.
+// `vm.createContext` still exposes the host's standard built-ins (including
+// `Intl`), so explicitly remove `Intl` to faithfully reproduce the Qt engine
+// where `typeof Intl === "undefined"`.
+const noIntlClock = vm.createContext({ parseInt })
+vm.runInContext("delete this.Intl; var Intl = undefined;", noIntlClock, { filename: "<no-intl-setup>" })
+vm.runInContext(source, noIntlClock, { filename: sourcePath })
+
+// Stand-in for main.qml's formatSystemLocalClock (ISO date + 24h time here).
+function systemLocalStandIn(date, dateFormat, timeFormat, timezoneFormat) {
+    const pad = (n) => (n < 10 ? "0" + n : "" + n)
+    const dateText = date.getUTCFullYear() + "-"
+        + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate())
+    const timeText = pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes())
+    return dateText + "  ·  " + timeText + " [local]"
+}
+
+test("without Intl, empty zone uses the systemLocalFormatter callback", () => {
+    let result
+    assert.doesNotThrow(() => {
+        result = noIntlClock.formatLocationClock(
+            instant, DATE_ISO, TIME_24H, TZ_HIDDEN, "en-GB", "", systemLocalStandIn)
+    })
+    assert.equal(result, "2024-01-15  ·  18:05 [local]")
+})
+
+test("without Intl, a real zone falls back to the systemLocalFormatter callback", () => {
+    let result
+    assert.doesNotThrow(() => {
+        result = noIntlClock.formatLocationClock(
+            instant, DATE_ISO, TIME_24H, TZ_HIDDEN, "en-GB", "Europe/London", systemLocalStandIn)
+    })
+    // Intl is unavailable, so the zone cannot be honoured; the callback (system
+    // -local) result is returned instead of throwing or blanking.
+    assert.equal(result, "2024-01-15  ·  18:05 [local]")
+    assert.ok(!result.includes("Invalid Date"))
+})
+
+test("without Intl and no callback, safeFallback yields a sensible string", () => {
+    let result
+    assert.doesNotThrow(() => {
+        result = noIntlClock.formatLocationClock(
+            instant, DATE_ISO, TIME_24H, TZ_HIDDEN, "en-GB", "")
+    })
+    assert.ok(result.length > 0)
+    assert.ok(!result.includes("Invalid Date"))
+    assert.match(result, /^\d{4}-\d{2}-\d{2}  ·  \d{2}:\d{2}$/)
+})
+
+test("without Intl and no callback, an invalid date never yields Invalid Date", () => {
+    let result
+    assert.doesNotThrow(() => {
+        result = noIntlClock.formatLocationClock(
+            new Date("nonsense"), DATE_ISO, TIME_24H, TZ_HIDDEN, "en-GB", "")
+    })
+    assert.ok(!result.includes("Invalid Date"))
+    assert.match(result, /^\d{4}-\d{2}-\d{2}  ·  \d{2}:\d{2}$/)
+})

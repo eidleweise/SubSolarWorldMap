@@ -101,6 +101,34 @@ abbreviation or full name, and select the clock font family and size. Future
 configuration work includes adding custom locations and extending the city
 catalog.
 
+Location pins show the same date, time, and timezone line in their tooltips.
+The Plasma/Qt QML JavaScript engine does not provide the ECMAScript `Intl`
+object, so these clock strings are built by Qt-based formatters rather than in
+pure JavaScript. The on-map clock badge, the Home pin, and `clockFormat.js`
+share a single system-local formatter (`formatSystemLocalClock`) that lives in
+`main.qml`; sharing one formatter keeps the badge and the system-local tooltips
+identical and means `clockFormat.js` never depends on `Intl` for the common
+case.
+
+City pins instead display the pin's OWN current local wall-clock time. Because
+`Intl` is unavailable, the IANA timezone conversion is performed in C++ by
+`CityCatalogManager::formatZonedClock` (`QTimeZone`/`QDateTime`/`QLocale`),
+exposed to QML as a `Q_INVOKABLE` and injected into `MapView.qml` through a
+`cityClock` callback that parallels the system-local one. The returned string
+reproduces the badge's format contract exactly — the same date, time, and
+timezone format choices and the `  ·  ` separator — differing only in the zone
+used. The Home pin and the on-map clock badge remain system-local and
+unchanged. When a city record has an empty or invalid IANA id, the C++
+formatter returns an empty string and the tooltip falls back to the existing
+system-local path, so a tooltip never shows a blank string or "Invalid Date".
+
+A correctness trap drove this design: a raw `QDateTime` handed to QML is
+re-formatted by `Qt.formatTime`/`Qt.formatDateTime` in the system-local zone,
+which silently undoes the timezone conversion. To avoid this, the full clock
+line is assembled in C++ and returned as a finished `QString`; QML inserts it
+verbatim rather than re-formatting it. The fallback path's `formatLocationClock`
+is also written so it can never throw out of the tooltip binding.
+
 The applet requests a fresh Qt Positioning/GeoClue fix at every startup and
 continues periodic updates while running. Users can instead choose a city
 from the local catalog or enter coordinates; a manual location takes priority
@@ -331,6 +359,16 @@ When either seconds-enabled time format is selected, a separate one-second
 timer refreshes only the displayed clock; solar calculations remain on the
 30-second timer.
 
+The header clock, like the Home pin, is always system-local. Per-city pin
+tooltips are the exception: they show each city's own wall-clock time, computed
+from its IANA timezone id in C++ via `CityCatalogManager::formatZonedClock`
+(`QTimeZone`/`QDateTime`/`QLocale`) because the QML JS engine lacks `Intl`
+(see section 5.4). The conversion is deliberately kept in C++ and returned as a
+finished string: handing a raw `QDateTime` back to QML would let
+`Qt.formatTime`/`Qt.formatDateTime` re-interpret it in the system-local zone and
+undo the conversion. An empty or invalid IANA id falls back to the system-local
+path, so a tooltip is never blank and never reads "Invalid Date".
+
 Run the deterministic math tests with `node --test tests/solarMath.test.js`, or
 use `ctest --test-dir build --output-on-failure` after configuring CMake with
 Node.js available. Tests cover equinox and solstice reference positions,
@@ -460,7 +498,51 @@ Important reliability concerns:
 - The project is a UI-heavy widget, so design polish may matter as much as implementation quality.
 - A remote city catalog introduces network availability, upstream format/version, and ODbL attribution/share-alike considerations.
 
-## 14. Implementation Phases
+## 14. Development and Packaging Environment
+
+The widget links a native Qt plugin, so its binaries must match the ABI of the
+Plasma host they run on. Two helper scripts use a Fedora
+[Distrobox](https://distrobox.it/) container to build and preview against a
+matching toolchain rather than the host directly. These scripts complement
+`deploy.sh` (user install) and `release.sh` (source release) rather than
+replacing them.
+
+### 14.1 Live preview with `view.sh`
+
+`view.sh` builds the project, stages the package (including the generated
+`buildInfo.js` deployment timestamp and the native CityCatalog plugin), then
+installs or upgrades it and launches `plasmawindowed` for a quick windowed
+preview.
+
+- The target container defaults to `fedora-dev` and is overridable through the
+  `VIEWER_CONTAINER` environment variable.
+- When `distrobox` is on `PATH`, the install, upgrade, and launch steps run
+  inside the container via `distrobox enter --name "$VIEWER_CONTAINER" -- …`.
+  When `distrobox` is absent, the same commands run directly on the host, so
+  the script also works outside a container.
+- The viewer environment must provide `kpackagetool6` and `plasmawindowed`;
+  the script checks for both before continuing.
+
+### 14.2 Bazzite packaging with `package-bazzite.sh`
+
+`package-bazzite.sh` produces a prebuilt `.plasmoid` for the immutable
+[Bazzite](https://bazzite.gg/) host. Because the host is immutable, the package
+must be built inside a Fedora Distrobox whose ABI matches Bazzite.
+
+- The script reads `/etc/os-release` and refuses to run unless `ID=fedora`,
+  printing a reminder to build inside a Fedora Distrobox to match the Bazzite
+  host ABI. It currently supports `x86_64` only.
+- It verifies the `package/metadata.json` version matches the CMake project
+  version, builds, runs `ctest`, installs into a staging prefix, and confirms
+  the staged tree contains both the plasmoid metadata and the native
+  `libcitycatalogplugin.so`.
+- It emits a versioned package named
+  `SubSolarWorldMap-<version>-fedora<VERSION_ID>-<arch>.plasmoid` plus a
+  SHA-256 checksum under `build-bazzite/packages/`. The result is a binary
+  package tied to the building Fedora release and architecture, so it must be
+  rebuilt for other Fedora releases or architectures.
+
+## 15. Implementation Phases
 
 ### Phase 1: Foundation
 
@@ -492,7 +574,7 @@ Important reliability concerns:
 - packaging and install metadata,
 - final validation and release readiness.
 
-## 15. Acceptance Criteria
+## 16. Acceptance Criteria
 
 A version should be considered ready for initial milestone release when:
 
@@ -502,6 +584,6 @@ A version should be considered ready for initial milestone release when:
 - markers render at the correct world positions,
 - the project builds with CMake and runs under `plasmoidviewer`.
 
-## 16. Recommendation
+## 17. Recommendation
 
 The implementation should prioritize clarity and maintainability over cleverness. The best long-term design is: small QML view components, a single solar calculation module, and a tightly scoped shader texture blend. This keeps the product understandable for future contributors and makes it easier to test each step independently.

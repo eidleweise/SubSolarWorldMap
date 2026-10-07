@@ -34,6 +34,29 @@ public:
     Q_INVOKABLE void logEvent(const QString &category, const QString &message);
     Q_INVOKABLE QString openPlasmaJournal();
 
+    // Returns the city's own current local wall-clock string, formatted
+    // byte-identically to main.qml::formatSystemLocalClock (same date/time/
+    // timezone format choices and the "  \u00b7  " separator), differing only
+    // in the zone used. Returns an EMPTY QString for an empty or invalid IANA
+    // id so the QML side falls back to the existing system-local path (never
+    // blank, never "Invalid Date").
+    //
+    // CORRECTNESS TRAP: a raw QDateTime handed back to QML would be re-formatted
+    // by Qt.formatTime/Qt.formatDateTime in the SYSTEM-LOCAL zone, silently
+    // undoing the zone conversion. We therefore assemble the full string here in
+    // C++ and return a finished QString. The live clock is read on every call,
+    // so the tooltip recomputes when shown.
+    Q_INVOKABLE QString formatZonedClock(const QString &ianaId, int dateFormat,
+                                         int timeFormat, int timezoneFormat,
+                                         const QString &localeName) const;
+
+    // Pure, deterministic helper that formats a GIVEN UTC instant for the given
+    // zone/format. formatZonedClock() calls this with the current UTC instant.
+    // Exposed (static) so the QTest can pin the conversion with fixed instants.
+    static QString formatZonedClockAt(const QDateTime &utcInstant, const QString &ianaId,
+                                       int dateFormat, int timeFormat, int timezoneFormat,
+                                       const QString &localeName);
+
 signals:
     void citiesChanged();
     void versionChanged();

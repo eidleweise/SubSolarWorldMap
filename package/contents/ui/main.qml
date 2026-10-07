@@ -153,6 +153,49 @@ PlasmoidItem {
             })
         readonly property int selectedCityPinStyle: Plasmoid.configuration.cityPinStyle
 
+        // Single source of truth for the clock string, shared by the date/time
+        // badge and the pin tooltips. Uses Qt formatting (the QML JS engine has
+        // no ECMAScript `Intl`), so it always renders SYSTEM-LOCAL time. Passed
+        // into MapView as `systemLocalClock` and consumed by clockFormat.js.
+        function formatSystemLocalClock(dateTime, dateFormat, timeFormat, timezoneFormat) {
+            let dateText
+            switch (dateFormat) {
+            case 0:
+                dateText = dateTime.toLocaleDateString(Qt.locale(), Locale.ShortFormat)
+                break
+            case 2:
+                dateText = Qt.formatDate(dateTime, "yyyy-MM-dd")
+                break
+            default:
+                dateText = dateTime.toLocaleDateString(Qt.locale(), Locale.LongFormat)
+            }
+
+            const timeFormats = ["HH:mm", "h:mm AP", "HH:mm:ss", "h:mm:ss AP"]
+            const timePattern = timeFormats[timeFormat] || timeFormats[0]
+            let clockText = dateText + "  ·  " + Qt.formatTime(dateTime, timePattern)
+            switch (timezoneFormat) {
+            case 1:
+                clockText += " " + Qt.formatDateTime(dateTime, "t")
+                break
+            case 2:
+                clockText += " " + Qt.formatDateTime(dateTime, "tttt")
+                break
+            }
+            return clockText
+        }
+
+        // City-pin clock formatter. Delegates the IANA timezone conversion to
+        // C++ (CityCatalogManager::formatZonedClock) because the Plasma/Qt 6 QML
+        // JS engine has no ECMAScript `Intl`. Returns the city's OWN local
+        // wall-clock string, or an empty string for an empty/invalid zone so the
+        // caller falls back to the system-local path. `dateTime` is accepted for
+        // signature symmetry with the fallback path; the C++ side reads the
+        // current instant itself so the tooltip stays live.
+        function formatCityClock(dateTime, ianaTimeZone, dateFormat, timeFormat, timezoneFormat) {
+            return cityCatalog.formatZonedClock(ianaTimeZone, dateFormat, timeFormat,
+                                                timezoneFormat, Qt.locale().name)
+        }
+
         function updateSolarPosition() {
             const now = new Date()
             solarPosition = SolarMath.subsolarPoint(now)
@@ -178,6 +221,14 @@ PlasmoidItem {
             timeFormat: Plasmoid.configuration.timeFormat
             timezoneFormat: Plasmoid.configuration.timezoneFormat
             localeName: Qt.locale().name
+            // Qt-based system-local clock formatter shared with the badge; the
+            // QML JS engine has no `Intl`, so clockFormat.js uses this for
+            // system-local time.
+            systemLocalClock: fullView.formatSystemLocalClock
+            // Per-city zoned clock formatter (C++ QTimeZone path). City pins use
+            // this for their OWN local time; empty result falls back to
+            // system-local inside MapView.
+            cityClock: fullView.formatCityClock
         }
 
         Rectangle {
@@ -199,33 +250,11 @@ PlasmoidItem {
                 color: "white"
                 font.family: Plasmoid.configuration.fontFamily || Qt.application.font.family
                 font.pixelSize: Plasmoid.configuration.fontSize
-                text: {
-                    let dateText
-                    switch (Plasmoid.configuration.dateFormat) {
-                    case 0:
-                        dateText = fullView.displayDateTime.toLocaleDateString(Qt.locale(), Locale.ShortFormat)
-                        break
-                    case 2:
-                        dateText = Qt.formatDate(fullView.displayDateTime, "yyyy-MM-dd")
-                        break
-                    default:
-                        dateText = fullView.displayDateTime.toLocaleDateString(Qt.locale(), Locale.LongFormat)
-                    }
-
-                    const timeFormats = ["HH:mm", "h:mm AP", "HH:mm:ss", "h:mm:ss AP"]
-                    const timeFormat = timeFormats[Plasmoid.configuration.timeFormat] || timeFormats[0]
-                    let clockText = dateText + "  ·  "
-                            + Qt.formatTime(fullView.displayDateTime, timeFormat)
-                    switch (Plasmoid.configuration.timezoneFormat) {
-                    case 1:
-                        clockText += " " + Qt.formatDateTime(fullView.displayDateTime, "t")
-                        break
-                    case 2:
-                        clockText += " " + Qt.formatDateTime(fullView.displayDateTime, "tttt")
-                        break
-                    }
-                    return clockText
-                }
+                text: fullView.formatSystemLocalClock(
+                          fullView.displayDateTime,
+                          Plasmoid.configuration.dateFormat,
+                          Plasmoid.configuration.timeFormat,
+                          Plasmoid.configuration.timezoneFormat)
             }
         }
 

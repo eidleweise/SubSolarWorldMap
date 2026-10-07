@@ -2,6 +2,8 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QLocale>
+#include <QTimeZone>
 #include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
@@ -452,6 +454,75 @@ QString CityCatalogManager::openPlasmaJournal()
                        "in a terminal.");
     logEvent(QStringLiteral("journal/error"), error);
     return error;
+}
+
+QString CityCatalogManager::formatZonedClockAt(const QDateTime &utcInstant, const QString &ianaId,
+                                               int dateFormat, int timeFormat, int timezoneFormat,
+                                               const QString &localeName)
+{
+    if (ianaId.isEmpty()) {
+        return QString();
+    }
+    const QTimeZone zone(ianaId.toUtf8());
+    if (!zone.isValid()) {
+        return QString();
+    }
+
+    const QDateTime dt = utcInstant.toTimeZone(zone);
+    const QLocale locale(localeName);
+
+    // Date segment, matching main.qml::formatSystemLocalClock:
+    //   0 => ShortFormat, 2 => ISO yyyy-MM-dd, default/1 => LongFormat.
+    QString dateText;
+    switch (dateFormat) {
+    case 0:
+        dateText = locale.toString(dt.date(), QLocale::ShortFormat);
+        break;
+    case 2:
+        dateText = dt.date().toString(QStringLiteral("yyyy-MM-dd"));
+        break;
+    default:
+        dateText = locale.toString(dt.date(), QLocale::LongFormat);
+        break;
+    }
+
+    // Time segment. The four patterns ARE Qt format strings, so dt.toString()
+    // reproduces main.qml's Qt.formatTime(dateTime, pattern) output byte-for-byte.
+    static const QString timePatterns[] = {
+        QStringLiteral("HH:mm"),
+        QStringLiteral("h:mm AP"),
+        QStringLiteral("HH:mm:ss"),
+        QStringLiteral("h:mm:ss AP")
+    };
+    const QString timePattern =
+        (timeFormat >= 0 && timeFormat < 4) ? timePatterns[timeFormat] : timePatterns[0];
+
+    // Separator literal: two spaces, middot (U+00B7), two spaces.
+    QString clockText = dateText + QStringLiteral("  \u00b7  ") + dt.toString(timePattern);
+
+    // Timezone segment, matching main.qml: 1 => abbreviation (Qt "t"),
+    // 2 => full name (Qt "tttt"). QTimeZone's abbreviation/displayName are the
+    // DST-aware equivalents for an arbitrary zone at this instant.
+    switch (timezoneFormat) {
+    case 1:
+        clockText += QLatin1Char(' ') + zone.abbreviation(dt);
+        break;
+    case 2:
+        clockText += QLatin1Char(' ') + zone.displayName(dt, QTimeZone::LongName, locale);
+        break;
+    default:
+        break;
+    }
+
+    return clockText;
+}
+
+QString CityCatalogManager::formatZonedClock(const QString &ianaId, int dateFormat,
+                                             int timeFormat, int timezoneFormat,
+                                             const QString &localeName) const
+{
+    return formatZonedClockAt(QDateTime::currentDateTimeUtc(), ianaId, dateFormat,
+                              timeFormat, timezoneFormat, localeName);
 }
 
 void CityCatalogManager::setStatus(const QString &status)

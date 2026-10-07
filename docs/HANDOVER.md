@@ -107,6 +107,7 @@ applet. Check for shader compilation and applet QML errors separately.
 2. **Completed: Solar model:** UTC solar position updates every 30 seconds, with deterministic math tests.
 3. **Completed: City markers:** A Cities settings page selects catalog entries and renders them alongside a distinct GeoClue-derived Home pin, with optional manual fallback coordinates.
 4. **Completed: City data:** The catalog downloads on first use, loads from the per-user cache, and refreshes asynchronously from upstream. Next, consider user-defined locations and migration if upstream IDs change.
+5. **Completed: Per-city local time:** City pin tooltips show each city's own local wall-clock time, converted from its IANA timezone in C++ (`CityCatalogManager::formatZonedClock`); the Home pin and on-map badge stay system-local.
 
 ## 7. Tips for Using Black Marble with Blue Marble
 * Pixel Alignment: Ensure both textures use the exact same base projection coordinates ($-180^\circ$ to $+180^\circ$ Longitude, $-90^\circ$ to $+90^\circ$ Latitude). NASA's standard 8K or 10K resolution Black Marble files pair directly with Blue Marble Next Generation images without needing manual warping or repositioning.

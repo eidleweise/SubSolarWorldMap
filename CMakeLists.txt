@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(SubSolarWorldMap VERSION 0.1.0)
 
 include(GNUInstallDirs)
-find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Qml)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Qml Test)
 find_package(ZLIB REQUIRED)
 set(CMAKE_AUTOMOC ON)
 qt_policy(SET QTP0001 NEW)
@@ -70,6 +70,32 @@ if(NODE_EXECUTABLE)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/clockFormat.test.js"
     )
 endif()
+
+# C++ QTest pinning the per-city zone conversion (CityCatalogManager::
+# formatZonedClockAt). Compiles the manager source directly so the pure helper
+# is testable; links the same Concurrent/Network/ZLIB deps the plugin needs.
+enable_testing()
+qt_add_executable(tst_zonedclock
+    tests/cpp/tst_zonedclock.cpp
+    package/contents/citycatalog/citycatalogmanager.cpp
+    package/contents/citycatalog/citycatalogmanager.h
+)
+target_link_libraries(tst_zonedclock PRIVATE
+    Qt6::Test
+    Qt6::Concurrent
+    Qt6::Network
+    Qt6::Qml
+    ZLIB::ZLIB
+)
+target_include_directories(tst_zonedclock PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/package/contents/citycatalog")
+# The test links the manager source only for its pure formatZonedClockAt helper;
+# it does not run a QML engine, so skip the automatic qml-plugin import that the
+# manager's QML_ELEMENT would otherwise pull in (which emits noisy, harmless
+# "plugin will not be linked" warnings for Plasma/Kirigami plugins).
+set_target_properties(tst_zonedclock PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN ON)
+add_test(NAME zoned-clock COMMAND tst_zonedclock)
+set_tests_properties(zoned-clock PROPERTIES ENVIRONMENT "TZ=UTC")
 
 set(PLASMOID_ID org.eidleweise.subsolarworldmap)
 

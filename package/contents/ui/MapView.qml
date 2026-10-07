@@ -19,6 +19,16 @@ Item {
     property int timeFormat: 0
     property int timezoneFormat: 0
     property string localeName: Qt.locale().name
+    // Qt-based system-local clock formatter injected from main.qml. The QML JS
+    // engine has no ECMAScript `Intl`, so clockFormat.js relies on this
+    // callback to render the system-local clock line (identical to the badge).
+    property var systemLocalClock: null
+    // Per-city zoned clock formatter injected from main.qml. Delegates the IANA
+    // timezone conversion to C++ (CityCatalogManager::formatZonedClock) since
+    // the QML JS engine has no `Intl`. Returns the city's own local wall-clock
+    // string, or an empty string for an empty/invalid zone (falls back to the
+    // system-local path below).
+    property var cityClock: null
     readonly property var pinPalette: [
         "#ff7043", "#4fc3f7", "#e53935", "#43a047", "#8e24aa", "#ffffff"
     ]
@@ -201,7 +211,8 @@ Item {
                                           mapView.timeFormat,
                                           mapView.timezoneFormat,
                                           mapView.localeName,
-                                          "")
+                                          "",
+                                          mapView.systemLocalClock)
             Controls.ToolTip.visible: homePinHoverHandler.hovered
 
             Rectangle {
@@ -281,18 +292,33 @@ Item {
                     id: cityPinHoverHandler
                 }
 
-                // City pins carry an IANA timezone from the catalog; an empty
-                // value falls back gracefully to system-local time inside the
-                // helper.
+                // City pins carry an IANA timezone from the catalog. Prefer the
+                // C++ zoned-clock path (the city's OWN local time); if it is
+                // unavailable or the zone is empty/invalid it returns an empty
+                // string and we fall back to system-local via clockFormat.js.
+                readonly property string cityZonedClock: {
+                    if (typeof mapView.cityClock === "function") {
+                        var zoned = mapView.cityClock(new Date(),
+                                                      modelData.timezone,
+                                                      mapView.dateFormat,
+                                                      mapView.timeFormat,
+                                                      mapView.timezoneFormat)
+                        if (zoned) {
+                            return zoned
+                        }
+                    }
+                    return ClockFormat.formatLocationClock(
+                               new Date(),
+                               mapView.dateFormat,
+                               mapView.timeFormat,
+                               mapView.timezoneFormat,
+                               mapView.localeName,
+                               modelData.timezone,
+                               mapView.systemLocalClock)
+                }
                 Controls.ToolTip.text: qsTr("Selected city: %1").arg(modelData.name)
                                         + "\n"
-                                        + ClockFormat.formatLocationClock(
-                                              new Date(),
-                                              mapView.dateFormat,
-                                              mapView.timeFormat,
-                                              mapView.timezoneFormat,
-                                              mapView.localeName,
-                                              modelData.timezone)
+                                        + cityZonedClock
                 Controls.ToolTip.visible: cityPinHoverHandler.hovered
             }
 
