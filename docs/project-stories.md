@@ -305,6 +305,25 @@ Status: **Implemented; build and automated tests pass.** Plasma runtime and
 visual review remain for line readability, label placement, performance, and
 the IDL path.
 
+## Story 16: Show the Moon's overhead point and phase
+
+As a user, I want an optional Moon marker on the map and its current phase and
+illumination on hover, so that I can see where the Moon is overhead without
+adding another prominent map layer.
+
+Acceptance criteria:
+
+- The marker tracks the sublunar point and updates with the solar position.
+- Its icon indicates waxing/waning phase and approximate illumination.
+- Hovering the marker names the phase and illumination percentage.
+- A **Show the Moon's location and phase** toggle sits between Map Clock and
+  Date Format in Date & Time settings and persists across restarts.
+- Moon position and phase are calculated locally, with no network or data
+  dependency.
+
+Status: **Implemented; automated calculation tests pass.** Visual review in
+Plasma remains.
+
 ## Definition of Done for the Epic
 
 The epic is complete when the widget:

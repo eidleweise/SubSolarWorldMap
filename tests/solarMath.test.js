@@ -33,6 +33,71 @@ test("subsolar longitude advances westward as UTC time advances", () => {
               `longitude changed westward by ${westwardChange} degrees`)
 })
 
+test("sublunar point agrees with the Moon's overhead position during the 2024 eclipse", () => {
+    const point = solarMath.sublunarPoint(new Date("2024-04-08T18:17:00Z"))
+    const sun = solarMath.subsolarPoint(new Date("2024-04-08T18:17:00Z"))
+
+    assert.ok(Math.abs(point.latitude - sun.latitude) < 1,
+              `latitude was ${point.latitude}`)
+    const longitudeDifference = ((point.longitude - sun.longitude + 540) % 360) - 180
+    assert.ok(Math.abs(longitudeDifference) < 1,
+              `longitude was ${point.longitude}`)
+})
+
+test("sublunar longitude advances westward and remains within map bounds", () => {
+    const before = solarMath.sublunarPoint(new Date("2024-04-08T18:00:00Z"))
+    const after = solarMath.sublunarPoint(new Date("2024-04-08T19:00:00Z"))
+    const westwardChange = ((before.longitude - after.longitude + 540) % 360) - 180
+
+    assert.ok(westwardChange > 13 && westwardChange < 17,
+              `longitude changed westward by ${westwardChange} degrees`)
+    assert.ok(after.latitude >= -90 && after.latitude <= 90)
+    assert.ok(after.longitude >= -180 && after.longitude < 180)
+})
+
+test("lunar phase identifies new and full moons with correct illumination", () => {
+    const newMoon = solarMath.lunarPhase(new Date("2024-04-08T18:21:00Z"))
+    const fullMoon = solarMath.lunarPhase(new Date("2024-03-25T07:00:00Z"))
+
+    assert.equal(newMoon.name, "New Moon")
+    assert.ok(newMoon.illumination < 0.01,
+              `new moon illumination was ${newMoon.illumination}`)
+    assert.equal(fullMoon.name, "Full Moon")
+    assert.ok(fullMoon.illumination > 0.99,
+              `full moon illumination was ${fullMoon.illumination}`)
+})
+
+test("lunar phase preserves waxing and waning direction", () => {
+    const waxing = solarMath.lunarPhase(new Date("2024-04-12T12:00:00Z"))
+    const waning = solarMath.lunarPhase(new Date("2024-04-28T12:00:00Z"))
+
+    assert.equal(waxing.waxing, true)
+    assert.equal(waning.waxing, false)
+    assert.ok(waxing.illumination > 0 && waxing.illumination < 1)
+    assert.ok(waning.illumination > 0 && waning.illumination < 1)
+})
+
+test("lunar calculations depend on the UTC instant, not local timezone notation", () => {
+    const utc = new Date("2024-04-12T12:00:00Z")
+    const offset = new Date("2024-04-12T07:00:00-05:00")
+    const utcPoint = solarMath.sublunarPoint(utc)
+    const offsetPoint = solarMath.sublunarPoint(offset)
+    const utcPhase = solarMath.lunarPhase(utc)
+    const offsetPhase = solarMath.lunarPhase(offset)
+
+    assert.ok(Math.abs(utcPoint.latitude - offsetPoint.latitude) < 1e-10)
+    assert.ok(Math.abs(utcPoint.longitude - offsetPoint.longitude) < 1e-10)
+    assert.equal(utcPhase.name, offsetPhase.name)
+    assert.ok(Math.abs(utcPhase.illumination - offsetPhase.illumination) < 1e-10)
+})
+
+test("lunar calculations reject invalid dates", () => {
+    assert.throws(() => solarMath.sublunarPoint(new Date("invalid")),
+                  { name: "TypeError" })
+    assert.throws(() => solarMath.lunarPhase("2024-04-08T18:21:00Z"),
+                  { name: "TypeError" })
+})
+
 test("calculation depends on the UTC instant, not the local timezone", () => {
     const utc = solarMath.subsolarPoint(new Date("2024-06-20T12:00:00Z"))
     const offset = solarMath.subsolarPoint(new Date("2024-06-20T07:00:00-05:00"))

@@ -6,6 +6,8 @@ are in daylight and darkness.
 ## What you can do
 
 - See the Sun's current position and the moving day/night boundary.
+- Show the Moon's current overhead location with an illuminated phase icon;
+  hover to see its phase and illumination.
 - Show land and ocean time-zone boundaries, current UTC-offset labels, and an
   emphasized International Date Line.
 - Show or hide the map's date and time, and choose its format and text style.
@@ -76,7 +78,8 @@ build details.
 
 Right-click the widget and choose **Configure SubSolar World Map…**:
 
-- **Date & Time** controls the clock overlay and its formatting.
+- **Date & Time** controls the clock overlay, its formatting, and whether the
+  Moon marker is shown.
 - **Cities** lets you choose automatic location, search for a city or enter
   coordinates for the Home pin, and manage selected city pins.
 - **Time Zones** controls the timezone-boundary overlay, UTC-offset labels, and

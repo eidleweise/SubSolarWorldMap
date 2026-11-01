@@ -112,6 +112,7 @@ applet. Check for shader compilation and applet QML errors separately.
 4. **Completed: City data:** The catalog downloads on first use, loads from the per-user cache, and refreshes asynchronously from upstream. Next, consider user-defined locations and migration if upstream IDs change.
 5. **Completed: Per-city local time:** City pin tooltips show each city's own local wall-clock time, converted from its IANA timezone in C++ (`CityCatalogManager::formatZonedClock`); the Home pin and on-map badge stay system-local.
 6. **In progress: Time-zone overlay:** `MapView.qml` paints bundled land/ocean boundaries, offset labels, and a Natural Earth IDL path. `tools/prepare_timezone_overlay.py` regenerates the data from documented upstream releases. The Time Zones config page controls the overlay; review build/runtime status and the data attribution in the README/design document.
+7. **In progress: Moon marker:** `solarMath.js` calculates the sublunar point and lunar phase locally. The marker is controlled from Date & Time settings; automated tests and desktop visual review are the remaining checks.
 
 ## 7. Tips for Using Black Marble with Blue Marble
 * Pixel Alignment: Ensure both textures use the exact same base projection coordinates ($-180^\circ$ to $+180^\circ$ Longitude, $-90^\circ$ to $+90^\circ$ Latitude). NASA's standard 8K or 10K resolution Black Marble files pair directly with Blue Marble Next Generation images without needing manual warping or repositioning.

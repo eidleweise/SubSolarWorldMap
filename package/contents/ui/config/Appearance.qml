@@ -12,6 +12,7 @@ KCM.SimpleKCM {
 
     // Plasma supplies every KConfig value and default to each category page.
     property alias cfg_showDateTime: showDateTime.checked
+    property alias cfg_showMoon: showMoon.checked
     property alias cfg_dateFormat: dateFormat.currentIndex
     property alias cfg_timeFormat: timeFormat.currentIndex
     property alias cfg_timezoneFormat: timezoneFormat.currentIndex
@@ -35,6 +36,7 @@ KCM.SimpleKCM {
     property var cfg_detectedHomeCoordinatesKnown
     property var cfg_showDeploymentTimestampDefault
     property var cfg_showDateTimeDefault
+    property var cfg_showMoonDefault
     property var cfg_dateFormatDefault
     property var cfg_timeFormatDefault
     property var cfg_timezoneFormatDefault
@@ -80,6 +82,13 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Map clock:")
             text: i18n("Show date and time on the map")
             ToolTip.text: i18n("Display or hide the date and time overlay on the map.")
+            ToolTip.visible: hovered
+        }
+
+        CheckBox {
+            id: showMoon
+            text: i18n("Show the Moon's location and phase")
+            ToolTip.text: i18n("Mark where the Moon is directly overhead. Hover for its current phase and illumination.")
             ToolTip.visible: hovered
         }
 

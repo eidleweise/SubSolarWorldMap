@@ -106,6 +106,8 @@ PlasmoidItem {
         property var currentDateTime: new Date()
         property var displayDateTime: currentDateTime
         property var solarPosition: SolarMath.subsolarPoint(currentDateTime)
+        property var lunarPosition: SolarMath.sublunarPoint(currentDateTime)
+        property var lunarPhase: SolarMath.lunarPhase(currentDateTime)
         readonly property var homeLocation: {
             if (Plasmoid.configuration.showHomePin === false) {
                 return null
@@ -203,6 +205,8 @@ PlasmoidItem {
         function updateSolarPosition() {
             const now = new Date()
             solarPosition = SolarMath.subsolarPoint(now)
+            lunarPosition = SolarMath.sublunarPoint(now)
+            lunarPhase = SolarMath.lunarPhase(now)
             currentDateTime = now
             displayDateTime = now
         }
@@ -218,6 +222,9 @@ PlasmoidItem {
             width: Math.min(fullView.width, fullView.height * 2)
             height: width / 2
             solarPosition: fullView.solarPosition
+            lunarPosition: fullView.lunarPosition
+            lunarPhase: fullView.lunarPhase
+            showMoon: Plasmoid.configuration.showMoon
             homeLocation: fullView.homeLocation
             selectedCities: fullView.selectedCityLocations
             cityPinStyle: fullView.selectedCityPinStyle

@@ -56,6 +56,117 @@ function subsolarPoint(date) {
     }
 }
 
+function sublunarPoint(date) {
+    if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
+        throw new TypeError("sublunarPoint expects a valid Date")
+    }
+
+    const julianDay = date.getTime() / 86400000 + 2440587.5
+    const daysSinceEpoch = julianDay - 2451543.5
+    const radians = Math.PI / 180
+    const node = normalizeDegrees(125.1228 - 0.0529538083 * daysSinceEpoch)
+    const inclination = 5.1454
+    const periapsis = normalizeDegrees(318.0634 + 0.1643573223 * daysSinceEpoch)
+    const eccentricity = 0.0549
+    const meanAnomaly = normalizeDegrees(115.3654 + 13.0649929509 * daysSinceEpoch)
+    const eccentricAnomaly = meanAnomaly + eccentricity / radians
+            * Math.sin(meanAnomaly * radians)
+            * (1 + eccentricity * Math.cos(meanAnomaly * radians))
+    const x = Math.cos(eccentricAnomaly * radians) - eccentricity
+    const y = Math.sqrt(1 - eccentricity * eccentricity)
+            * Math.sin(eccentricAnomaly * radians)
+    const trueAnomaly = Math.atan2(y, x) / radians
+    const orbitalLongitude = trueAnomaly + periapsis
+    const longitude = Math.atan2(
+        Math.sin(node * radians) * Math.cos(orbitalLongitude * radians)
+                + Math.cos(node * radians) * Math.sin(orbitalLongitude * radians)
+                * Math.cos(inclination * radians),
+        Math.cos(node * radians) * Math.cos(orbitalLongitude * radians)
+                - Math.sin(node * radians) * Math.sin(orbitalLongitude * radians)
+                * Math.cos(inclination * radians)) / radians
+    const latitude = Math.asin(
+        Math.sin(orbitalLongitude * radians) * Math.sin(inclination * radians))
+            / radians
+
+    const sunMeanAnomaly = normalizeDegrees(
+        356.0470 + 0.9856002585 * daysSinceEpoch)
+    const sunMeanLongitude = normalizeDegrees(282.9404
+                                               + 4.70935e-5 * daysSinceEpoch
+                                               + sunMeanAnomaly)
+    const meanElongation = normalizeDegrees(node + periapsis + meanAnomaly
+                                             - sunMeanLongitude)
+    const argumentOfLatitude = normalizeDegrees(node + periapsis + meanAnomaly - node)
+    const lunarLongitude = normalizeDegrees(longitude)
+    const longitudeCorrection = -1.274 * Math.sin((meanAnomaly - 2 * meanElongation) * radians)
+            + 0.658 * Math.sin(2 * meanElongation * radians)
+            - 0.186 * Math.sin(sunMeanAnomaly * radians)
+            - 0.059 * Math.sin((2 * meanAnomaly - 2 * meanElongation) * radians)
+            - 0.057 * Math.sin((meanAnomaly - 2 * meanElongation + sunMeanAnomaly) * radians)
+            + 0.053 * Math.sin((meanAnomaly + 2 * meanElongation) * radians)
+            + 0.046 * Math.sin((2 * meanElongation - sunMeanAnomaly) * radians)
+            + 0.041 * Math.sin((meanAnomaly - sunMeanAnomaly) * radians)
+            - 0.035 * Math.sin(meanElongation * radians)
+            - 0.031 * Math.sin((meanAnomaly + sunMeanAnomaly) * radians)
+            - 0.015 * Math.sin((2 * argumentOfLatitude - 2 * meanElongation) * radians)
+            + 0.011 * Math.sin((meanAnomaly - 4 * meanElongation) * radians)
+    const latitudeCorrection = -0.173 * Math.sin((argumentOfLatitude - 2 * meanElongation) * radians)
+            - 0.055 * Math.sin((meanAnomaly - argumentOfLatitude - 2 * meanElongation) * radians)
+            - 0.046 * Math.sin((meanAnomaly + argumentOfLatitude - 2 * meanElongation) * radians)
+            + 0.033 * Math.sin((argumentOfLatitude + 2 * meanElongation) * radians)
+            + 0.017 * Math.sin((2 * meanAnomaly + argumentOfLatitude) * radians)
+    const correctedLongitude = (lunarLongitude + longitudeCorrection) * radians
+    const correctedLatitude = (latitude + latitudeCorrection) * radians
+    const obliquity = (23.4393 - 3.563e-7 * daysSinceEpoch) * radians
+    const rightAscension = Math.atan2(
+        Math.sin(correctedLongitude) * Math.cos(obliquity)
+                - Math.tan(correctedLatitude) * Math.sin(obliquity),
+        Math.cos(correctedLongitude)) / radians
+    const declination = Math.asin(
+        Math.sin(correctedLatitude) * Math.cos(obliquity)
+                + Math.cos(correctedLatitude) * Math.sin(obliquity)
+                * Math.sin(correctedLongitude)) / radians
+    const centuries = (julianDay - 2451545.0) / 36525
+    const siderealDegrees = normalizeDegrees(
+        280.46061837 + 360.98564736629 * (julianDay - 2451545.0)
+        + 0.000387933 * centuries * centuries
+        - centuries * centuries * centuries / 38710000)
+
+    return {
+        latitude: declination,
+        longitude: normalizeDegrees(rightAscension - siderealDegrees)
+    }
+}
+
+function lunarPhase(date) {
+    if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
+        throw new TypeError("lunarPhase expects a valid Date")
+    }
+
+    const julianDay = date.getTime() / 86400000 + 2440587.5
+    const phaseAge = ((julianDay - 2451550.1) % 29.530588853 + 29.530588853)
+            % 29.530588853
+    const phaseAngle = phaseAge / 29.530588853 * 360
+    const illumination = (1 - Math.cos(phaseAngle * Math.PI / 180)) / 2
+    const phaseIndex = Math.floor((phaseAngle + 22.5) / 45) % 8
+    const phases = [
+        "New Moon",
+        "Waxing Crescent",
+        "First Quarter",
+        "Waxing Gibbous",
+        "Full Moon",
+        "Waning Gibbous",
+        "Last Quarter",
+        "Waning Crescent"
+    ]
+
+    return {
+        name: phases[phaseIndex],
+        illumination: illumination,
+        waxing: phaseAngle < 180,
+        angle: phaseAngle
+    }
+}
+
 function solarAltitudeCosine(latitude, longitude, solarPosition) {
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
             || !Number.isFinite(longitude) || longitude < -180 || longitude > 180

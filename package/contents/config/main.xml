@@ -11,6 +11,9 @@
     <entry name="showDateTime" type="Bool">
       <default>true</default>
     </entry>
+    <entry name="showMoon" type="Bool">
+      <default>true</default>
+    </entry>
     <entry name="dateFormat" type="Int">
       <default>1</default>
     </entry>

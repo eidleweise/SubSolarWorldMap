@@ -11,6 +11,9 @@ Item {
     id: mapView
 
     property var solarPosition
+    property var lunarPosition
+    property var lunarPhase
+    property bool showMoon: true
     property var homeLocation
     property var selectedCities: []
     property int cityPinStyle: 0
@@ -43,6 +46,20 @@ Item {
     property string timeZoneFontFamily: ""
     property int timeZoneFontSize: 11
     property bool showInternationalDateLine: true
+
+    function lunarPhaseName(name) {
+        switch (name) {
+        case "New Moon": return qsTr("New Moon")
+        case "Waxing Crescent": return qsTr("Waxing Crescent")
+        case "First Quarter": return qsTr("First Quarter")
+        case "Waxing Gibbous": return qsTr("Waxing Gibbous")
+        case "Full Moon": return qsTr("Full Moon")
+        case "Waning Gibbous": return qsTr("Waning Gibbous")
+        case "Last Quarter": return qsTr("Last Quarter")
+        case "Waning Crescent": return qsTr("Waning Crescent")
+        default: return name
+        }
+    }
     readonly property var pinPalette: [
         "#ff7043", "#4fc3f7", "#e53935", "#43a047", "#8e24aa", "#ffffff"
     ]
@@ -421,6 +438,102 @@ Item {
             function onShowInternationalDateLineChanged() {
                 timeZoneOverlay.requestPaint()
             }
+        }
+    }
+
+    Item {
+        id: moonMarker
+        readonly property var point: mapView.lunarPosition
+                                      ? MapProjection.equirectangularPoint(
+                                            mapView.lunarPosition.latitude,
+                                            mapView.lunarPosition.longitude,
+                                            mapView.width,
+                                            mapView.height)
+                                      : null
+        x: point ? point.x - width / 2 : 0
+        y: point ? point.y - height / 2 : 0
+        width: 30
+        height: 30
+        z: 2
+        visible: mapView.showMoon && !!point && !!mapView.lunarPhase
+        Accessible.name: qsTr("Sublunar point, %1").arg(
+                             mapView.lunarPhase
+                             ? mapView.lunarPhaseName(mapView.lunarPhase.name) : "")
+
+        HoverHandler {
+            id: moonHoverHandler
+        }
+
+        Controls.ToolTip.text: qsTr("Moon overhead\n%1 · %2% illuminated").arg(
+                                   mapView.lunarPhase
+                                   ? mapView.lunarPhaseName(mapView.lunarPhase.name) : "")
+                                   .arg(mapView.lunarPhase
+                                        ? Math.round(mapView.lunarPhase.illumination * 100) : 0)
+        Controls.ToolTip.visible: moonHoverHandler.hovered
+
+        Canvas {
+            id: moonIcon
+            anchors.centerIn: parent
+            width: 22
+            height: 22
+
+            onPaint: {
+                if (!mapView.lunarPhase) {
+                    return
+                }
+                const context = getContext("2d")
+                const radius = width / 2 - 1
+                const centerX = width / 2
+                const centerY = height / 2
+                const phase = mapView.lunarPhase
+                const angle = phase.angle * Math.PI / 180
+                const terminator = Math.cos(angle) * radius
+                const side = phase.waxing ? 1 : -1
+
+                context.clearRect(0, 0, width, height)
+                context.beginPath()
+                context.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+                context.fillStyle = "#263238"
+                context.fill()
+                context.save()
+                context.beginPath()
+                context.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+                context.clip()
+                context.beginPath()
+                context.moveTo(centerX, centerY - radius)
+                context.arc(centerX, centerY, radius,
+                            -Math.PI / 2,
+                            phase.waxing ? Math.PI / 2 : -3 * Math.PI / 2,
+                            !phase.waxing)
+                context.bezierCurveTo(centerX + side * terminator,
+                                      centerY + radius * 0.55,
+                                      centerX + side * terminator,
+                                      centerY - radius * 0.55,
+                                      centerX, centerY - radius)
+                context.closePath()
+                context.fillStyle = "#fff1b8"
+                context.fill()
+                context.restore()
+                context.beginPath()
+                context.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+                context.strokeStyle = "#fff8d6"
+                context.lineWidth = 1
+                context.stroke()
+            }
+
+            Connections {
+                target: mapView
+
+                function onLunarPhaseChanged() { moonIcon.requestPaint() }
+            }
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 4
+            height: 4
+            radius: width / 2
+            color: "#fff8d6"
         }
     }
 
