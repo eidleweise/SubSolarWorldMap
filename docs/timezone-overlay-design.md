@@ -2,9 +2,9 @@
 
 ## Status
 
-Initial implementation is complete and the build/tests pass; desktop visual
-validation remains. The product direction is a decorative, secondary time-zone
-guide, not a political or historical atlas.
+Initial implementation is complete; the build/tests pass and desktop visual
+validation is confirmed. The product direction is a decorative, secondary
+time-zone guide, not a political or historical atlas.
 
 ## Goal
 

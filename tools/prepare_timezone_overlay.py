@@ -23,13 +23,10 @@ def load_json(path):
 
 
 def find_mapshaper():
-    executable = shutil.which("mapshaper")
-    if executable:
-        return [executable]
     npx = shutil.which("npx")
     if npx:
         return [npx, "--yes", f"mapshaper@{MAPSHAPER_VERSION}"]
-    raise RuntimeError("Install mapshaper or Node.js/npm to run npx.")
+    raise RuntimeError("Install Node.js/npm (npx) to run the pinned Mapshaper version.")
 
 
 def polygon_list(geometry):

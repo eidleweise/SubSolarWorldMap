@@ -399,46 +399,6 @@ Item {
             function onTimeZoneFontSizeChanged() { timeZoneOverlay.requestPaint() }
             function onShowInternationalDateLineChanged() { timeZoneOverlay.requestPaint() }
         }
-
-        Connections {
-            target: mapView
-            function onSolarPositionChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneLineOpacityChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneDayLineColorChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneNightLineColorChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onShowTimeZoneLabelsChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneLabelTopChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneLabelMiddleChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneLabelBottomChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneLabelFormatChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneFontFamilyChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onTimeZoneFontSizeChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-            function onShowInternationalDateLineChanged() {
-                timeZoneOverlay.requestPaint()
-            }
-        }
     }
 
     Item {
