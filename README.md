@@ -78,6 +78,8 @@ build details.
 ## Settings
 
 Right-click the widget and choose **Configure SubSolar World Map…**:
+<img width="1402" height="809" alt="Screenshot_20261101_224148" src="https://github.com/user-attachments/assets/b5637f4e-c667-4747-a687-f1ab031e2b45" />
+
 
 - **Date & Time** controls the clock overlay, its formatting, and whether the
   Moon marker is shown.
