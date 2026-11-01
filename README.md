@@ -104,4 +104,6 @@ The widget downloads a filtered subset of its city data. Credit:
 
 For build, architecture, and contribution details, see
 [docs/HANDOVER.md](docs/HANDOVER.md) and
-[docs/technical-code-document.md](docs/technical-code-document.md).
+[docs/technical-code-document.md](docs/technical-code-document.md). The
+[time zone overlay design](docs/timezone-overlay-design.md) records a proposed
+feature that is still in the design stage.
