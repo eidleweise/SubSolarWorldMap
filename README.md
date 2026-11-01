@@ -1,7 +1,7 @@
 # SubSolar World Map
 <img width="1283" height="642" alt="Screenshot_20261101_170608" src="https://github.com/user-attachments/assets/4020572a-66c3-458e-9e1a-a1d7991151bb" />
 
-SubSolar World Map is a KDE Plasma 6 widget that shows which parts of Earth
+SubSolar World Map is a KDE Plasma 6 widget written for Fedora 44 / Bazzite that shows which parts of Earth
 are in daylight and darkness.
 
 ## What you can do
