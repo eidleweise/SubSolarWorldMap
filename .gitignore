@@ -70,6 +70,9 @@ compile_commands.json
 # Agent workflow task artifacts
 /.agents/
 
+# Personal, machine-specific notes
+/BAZZITE-HANDOVER.local.md
+
 # Operating system files
 .DS_Store
 Thumbs.db
