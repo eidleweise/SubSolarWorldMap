@@ -1,1 +1,0 @@
-distrobox enter --name fedora-dev -- ./deploy.sh --restart-shell
