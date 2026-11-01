@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SubSolarWorldMap VERSION 0.2.0)
+project(SubSolarWorldMap VERSION 0.2.1)
 
 include(GNUInstallDirs)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Qml Test)
