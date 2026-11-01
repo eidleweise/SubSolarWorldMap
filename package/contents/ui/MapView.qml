@@ -5,6 +5,7 @@ import QtQuick.Controls as Controls
 import QtQuick.Window
 import "../js/mapProjection.js" as MapProjection
 import "../js/clockFormat.js" as ClockFormat
+import "../js/timezoneOverlayData.js" as TimeZoneOverlayData
 
 Item {
     id: mapView
@@ -29,8 +30,24 @@ Item {
     // string, or an empty string for an empty/invalid zone (falls back to the
     // system-local path below).
     property var cityClock: null
+    property var utcOffsetFormatter: null
+    property bool showTimeZoneBoundaries: true
+    property int timeZoneLineOpacity: 60
+    property int timeZoneDayLineColor: 1
+    property int timeZoneNightLineColor: 4
+    property bool showTimeZoneLabels: true
+    property bool timeZoneLabelTop: false
+    property bool timeZoneLabelMiddle: true
+    property bool timeZoneLabelBottom: false
+    property int timeZoneLabelFormat: 1
+    property string timeZoneFontFamily: ""
+    property int timeZoneFontSize: 11
+    property bool showInternationalDateLine: true
     readonly property var pinPalette: [
         "#ff7043", "#4fc3f7", "#e53935", "#43a047", "#8e24aa", "#ffffff"
+    ]
+    readonly property var timeZoneLinePalette: [
+        "#ffffff", "#263238", "#80deea", "#ffd54f", "#cfd8dc", "#ff8a65"
     ]
     readonly property var solarPoint: solarPosition
                                        ? MapProjection.equirectangularPoint(
@@ -114,6 +131,296 @@ Item {
         onStatusChanged: {
             if (status === ShaderEffect.Error)
                 console.error("Unable to load day/night map shader:", log)
+        }
+    }
+
+    Canvas {
+        id: timeZoneOverlay
+        anchors.fill: parent
+        z: 1.5
+        visible: mapView.showTimeZoneBoundaries
+        renderTarget: Canvas.Image
+        renderStrategy: Canvas.Cooperative
+
+        function coordinate(longitude, latitude) {
+            return {
+                x: width * (longitude + 180) / 360,
+                y: height * (90 - latitude) / 180
+            }
+        }
+
+        function daylight(latitude, longitude) {
+            if (!mapView.solarPosition) {
+                return 0.5
+            }
+            const radians = Math.PI / 180
+            const lat = latitude * radians
+            const solarLat = mapView.solarPosition.latitude * radians
+            const longitudeDifference =
+                (longitude - mapView.solarPosition.longitude) * radians
+            const altitudeCosine = Math.sin(lat) * Math.sin(solarLat)
+                    + Math.cos(lat) * Math.cos(solarLat)
+                    * Math.cos(longitudeDifference)
+            const edge = 0.035
+            const value = Math.max(0, Math.min(1, (altitudeCosine + edge) / (2 * edge)))
+            return value * value * (3 - 2 * value)
+        }
+
+        function addSegment(buckets, longitude1, latitude1, longitude2, latitude2) {
+            const longitudeDelta = longitude2 - longitude1
+            const latitudeDelta = latitude2 - latitude1
+            const steps = Math.max(1, Math.ceil(
+                Math.max(Math.abs(longitudeDelta), Math.abs(latitudeDelta)) * 2))
+            for (let index = 0; index < steps; index++) {
+                const start = index / steps
+                const end = (index + 1) / steps
+                const middle = (start + end) / 2
+                const middleLongitude = longitude1 + longitudeDelta * middle
+                const middleLatitude = latitude1 + latitudeDelta * middle
+                const bucket = Math.max(0, Math.min(15,
+                    Math.floor(daylight(middleLatitude, middleLongitude) * 16)))
+                const first = coordinate(longitude1 + longitudeDelta * start,
+                                         latitude1 + latitudeDelta * start)
+                const second = coordinate(longitude1 + longitudeDelta * end,
+                                          latitude1 + latitudeDelta * end)
+                buckets[bucket].push(first.x, first.y, second.x, second.y)
+            }
+        }
+
+        function addWrappedSegment(buckets, longitude1, latitude1, longitude2, latitude2) {
+            if (Math.abs(longitude2 - longitude1) <= 180) {
+                addSegment(buckets, longitude1, latitude1, longitude2, latitude2)
+                return
+            }
+            const adjustedLongitude2 = longitude2 + (longitude2 > longitude1 ? -360 : 360)
+            const seamLongitude = longitude1 >= 0 ? 180 : -180
+            const denominator = adjustedLongitude2 - longitude1
+            if (Math.abs(denominator) < 0.000001) {
+                return
+            }
+            const fraction = (seamLongitude - longitude1) / denominator
+            if (fraction < 0 || fraction > 1) {
+                return
+            }
+            const seamLatitude = latitude1 + (latitude2 - latitude1) * fraction
+            addSegment(buckets, longitude1, latitude1, seamLongitude, seamLatitude)
+            addSegment(buckets, -seamLongitude, seamLatitude, longitude2, latitude2)
+        }
+
+        function rgba(color, alpha) {
+            return "rgba(" + Math.round(color.r * 255) + ","
+                    + Math.round(color.g * 255) + ","
+                    + Math.round(color.b * 255) + "," + alpha + ")"
+        }
+
+        function mixedColor(nightColor, dayColor, mix) {
+            return Qt.rgba(nightColor.r + (dayColor.r - nightColor.r) * mix,
+                           nightColor.g + (dayColor.g - nightColor.g) * mix,
+                           nightColor.b + (dayColor.b - nightColor.b) * mix,
+                           1)
+        }
+
+        function paintBoundaries(context) {
+            const paths = TimeZoneOverlayData.overlayData.boundaries
+            const buckets = Array.from({ length: 16 }, () => [])
+            for (const path of paths) {
+                for (let index = 1; index < path.length; index++) {
+                    const first = path[index - 1]
+                    const second = path[index]
+                    addWrappedSegment(buckets, first[0], first[1], second[0], second[1])
+                }
+            }
+
+            const dayColor = Qt.color(mapView.timeZoneLinePalette[
+                                          mapView.timeZoneDayLineColor] || "#263238")
+            const nightColor = Qt.color(mapView.timeZoneLinePalette[
+                                            mapView.timeZoneNightLineColor] || "#cfd8dc")
+            context.lineWidth = 0.8
+            context.lineCap = "round"
+            context.lineJoin = "round"
+            context.globalAlpha = Math.max(0, Math.min(100, mapView.timeZoneLineOpacity)) / 100
+            for (let bucket = 0; bucket < buckets.length; bucket++) {
+                const segments = buckets[bucket]
+                if (segments.length === 0) {
+                    continue
+                }
+                context.beginPath()
+                for (let index = 0; index < segments.length; index += 4) {
+                    context.moveTo(segments[index], segments[index + 1])
+                    context.lineTo(segments[index + 2], segments[index + 3])
+                }
+                context.strokeStyle = rgba(mixedColor(nightColor, dayColor, bucket / 15), 1)
+                context.stroke()
+            }
+            context.globalAlpha = 1
+        }
+
+        function paintDateLine(context) {
+            if (!mapView.showInternationalDateLine) {
+                return
+            }
+            const paths = TimeZoneOverlayData.overlayData.dateLine
+            const buckets = Array.from({ length: 16 }, () => [])
+            for (const path of paths) {
+                for (let index = 1; index < path.length; index++) {
+                    const first = path[index - 1]
+                    const second = path[index]
+                    addWrappedSegment(buckets, first[0], first[1], second[0], second[1])
+                }
+            }
+            const segments = []
+            for (const bucket of buckets) {
+                for (const segment of bucket) {
+                    segments.push(segment)
+                }
+            }
+            context.lineCap = "round"
+            context.lineJoin = "round"
+            context.globalAlpha = Math.max(0, Math.min(100, mapView.timeZoneLineOpacity)) / 100
+            context.beginPath()
+            for (let index = 0; index < segments.length; index += 4) {
+                context.moveTo(segments[index], segments[index + 1])
+                context.lineTo(segments[index + 2], segments[index + 3])
+            }
+            context.strokeStyle = "#15191d"
+            context.lineWidth = 3.2
+            context.stroke()
+            context.strokeStyle = "#ffe082"
+            context.lineWidth = 1.8
+            context.stroke()
+
+            context.font = "bold " + mapView.timeZoneFontSize + "px "
+                    + (mapView.timeZoneFontFamily || "sans-serif")
+            context.textAlign = "right"
+            context.textBaseline = "bottom"
+            context.lineWidth = 2.5
+            context.strokeStyle = "#15191d"
+            context.fillStyle = "#ffe082"
+            const labelY = height * (90 + 2.509434) / 180
+            context.strokeText(qsTr("International Date Line"), width - 7, labelY)
+            context.fillText(qsTr("International Date Line"), width - 7, labelY)
+            context.globalAlpha = 1
+        }
+
+        function paintLabels(context) {
+            if (!mapView.showTimeZoneLabels
+                    || typeof mapView.utcOffsetFormatter !== "function") {
+                return
+            }
+            const data = TimeZoneOverlayData.overlayData.labels
+            const rows = []
+            if (mapView.timeZoneLabelTop) {
+                rows.push({ name: "top", y: height * (90 - 75) / 180 })
+            }
+            if (mapView.timeZoneLabelMiddle) {
+                rows.push({ name: "middle", y: height / 2 })
+            }
+            if (mapView.timeZoneLabelBottom) {
+                rows.push({ name: "bottom", y: height * (90 + 75) / 180 })
+            }
+
+            context.font = mapView.timeZoneFontSize + "px "
+                    + (mapView.timeZoneFontFamily || "sans-serif")
+            context.textAlign = "center"
+            context.textBaseline = "middle"
+            context.lineWidth = 2.5
+            context.strokeStyle = "rgba(0, 0, 0, 0.75)"
+            context.fillStyle = "#fffdf4"
+            for (const row of rows) {
+                const anchors = data[row.name].slice().sort(
+                    (first, second) => first.longitude - second.longitude)
+                let lastRight = -Infinity
+                for (const anchor of anchors) {
+                    const text = mapView.utcOffsetFormatter(
+                        anchor.tzid, mapView.timeZoneLabelFormat)
+                    if (!text) {
+                        continue
+                    }
+                    const point = coordinate(anchor.longitude, anchor.latitude)
+                    const textWidth = context.measureText(text).width + 10
+                    const left = point.x - textWidth / 2
+                    const right = point.x + textWidth / 2
+                    if (left < 4 || right > width - 4 || left < lastRight + 6) {
+                        continue
+                    }
+                    context.strokeText(text, point.x, row.y)
+                    context.fillText(text, point.x, row.y)
+                    lastRight = right
+                }
+            }
+        }
+
+        onPaint: {
+            const context = getContext("2d")
+            context.clearRect(0, 0, width, height)
+            if (!visible || width <= 0 || height <= 0) {
+                return
+            }
+            paintBoundaries(context)
+            paintDateLine(context)
+            paintLabels(context)
+        }
+
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
+        onVisibleChanged: requestPaint()
+
+        Connections {
+            target: mapView
+
+            function onSolarPositionChanged() { timeZoneOverlay.requestPaint() }
+            function onUtcOffsetFormatterChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneLineOpacityChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneDayLineColorChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneNightLineColorChanged() { timeZoneOverlay.requestPaint() }
+            function onShowTimeZoneLabelsChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneLabelTopChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneLabelMiddleChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneLabelBottomChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneLabelFormatChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneFontFamilyChanged() { timeZoneOverlay.requestPaint() }
+            function onTimeZoneFontSizeChanged() { timeZoneOverlay.requestPaint() }
+            function onShowInternationalDateLineChanged() { timeZoneOverlay.requestPaint() }
+        }
+
+        Connections {
+            target: mapView
+            function onSolarPositionChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneLineOpacityChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneDayLineColorChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneNightLineColorChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onShowTimeZoneLabelsChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneLabelTopChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneLabelMiddleChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneLabelBottomChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneLabelFormatChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneFontFamilyChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onTimeZoneFontSizeChanged() {
+                timeZoneOverlay.requestPaint()
+            }
+            function onShowInternationalDateLineChanged() {
+                timeZoneOverlay.requestPaint()
+            }
         }
     }
 

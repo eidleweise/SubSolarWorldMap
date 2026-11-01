@@ -23,6 +23,9 @@ private slots:
     void invalidIdReturnsEmpty();
     void emptyIdReturnsEmpty();
     void twelveHourUppercaseAmPm();
+    void utcOffsetFormats();
+    void fractionalUtcOffsetFormats();
+    void invalidUtcOffsetReturnsEmpty();
 };
 
 void TestZonedClock::kolkataNoDst()
@@ -79,6 +82,43 @@ void TestZonedClock::twelveHourUppercaseAmPm()
     const QString result = CityCatalogManager::formatZonedClockAt(
         utc, QStringLiteral("Asia/Kolkata"), 2 /*ISO*/, 1 /*h:mm AP*/, 0 /*hidden*/, QStringLiteral("en_US"));
     QCOMPARE(result, QStringLiteral("2024-01-15  \u00b7  4:39 PM"));
+}
+
+void TestZonedClock::utcOffsetFormats()
+{
+    const QDateTime utc(QDate(2024, 7, 15), QTime(12, 0, 0), QTimeZone::UTC);
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Europe/London"), 0),
+             QStringLiteral("+1"));
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Europe/London"), 1),
+             QStringLiteral("+1:00 UTC"));
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Europe/London"), 2),
+             QStringLiteral("+01:00"));
+}
+
+void TestZonedClock::fractionalUtcOffsetFormats()
+{
+    const QDateTime utc(QDate(2024, 1, 15), QTime(11, 9, 0), QTimeZone::UTC);
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Asia/Kolkata"), 0),
+             QStringLiteral("+5:30"));
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Asia/Kolkata"), 1),
+             QStringLiteral("+5:30 UTC"));
+    QCOMPARE(CityCatalogManager::formatUtcOffsetAt(
+                 utc, QStringLiteral("Asia/Kolkata"), 2),
+             QStringLiteral("+05:30"));
+}
+
+void TestZonedClock::invalidUtcOffsetReturnsEmpty()
+{
+    const QDateTime utc(QDate(2024, 1, 15), QTime(11, 9, 0), QTimeZone::UTC);
+    QVERIFY(CityCatalogManager::formatUtcOffsetAt(
+                utc, QStringLiteral("Not/AZone"), 1).isEmpty());
+    QVERIFY(CityCatalogManager::formatUtcOffsetAt(
+                utc, QStringLiteral("Asia/Kolkata"), 3).isEmpty());
 }
 
 QTEST_MAIN(TestZonedClock)

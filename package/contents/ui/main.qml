@@ -196,6 +196,10 @@ PlasmoidItem {
                                                 timezoneFormat, Qt.locale().name)
         }
 
+        function formatTimeZoneOffset(ianaTimeZone, format) {
+            return cityCatalog.formatCurrentUtcOffset(ianaTimeZone, format)
+        }
+
         function updateSolarPosition() {
             const now = new Date()
             solarPosition = SolarMath.subsolarPoint(now)
@@ -229,6 +233,19 @@ PlasmoidItem {
             // this for their OWN local time; empty result falls back to
             // system-local inside MapView.
             cityClock: fullView.formatCityClock
+            utcOffsetFormatter: fullView.formatTimeZoneOffset
+            showTimeZoneBoundaries: Plasmoid.configuration.showTimeZoneBoundaries
+            timeZoneLineOpacity: Plasmoid.configuration.timeZoneLineOpacity
+            timeZoneDayLineColor: Plasmoid.configuration.timeZoneDayLineColor
+            timeZoneNightLineColor: Plasmoid.configuration.timeZoneNightLineColor
+            showTimeZoneLabels: Plasmoid.configuration.showTimeZoneLabels
+            timeZoneLabelTop: Plasmoid.configuration.timeZoneLabelTop
+            timeZoneLabelMiddle: Plasmoid.configuration.timeZoneLabelMiddle
+            timeZoneLabelBottom: Plasmoid.configuration.timeZoneLabelBottom
+            timeZoneLabelFormat: Plasmoid.configuration.timeZoneLabelFormat
+            timeZoneFontFamily: Plasmoid.configuration.timeZoneFontFamily
+            timeZoneFontSize: Plasmoid.configuration.timeZoneFontSize
+            showInternationalDateLine: Plasmoid.configuration.showInternationalDateLine
         }
 
         Rectangle {

@@ -2,9 +2,9 @@
 
 ## Status
 
-Design proposal only. No implementation or dataset has been selected or added.
-The product direction is a decorative, secondary time-zone guide, not a
-political or historical atlas.
+Initial implementation is complete and the build/tests pass; desktop visual
+validation remains. The product direction is a decorative, secondary time-zone
+guide, not a political or historical atlas.
 
 ## Goal
 
@@ -19,18 +19,18 @@ the day/night imagery or the existing location pins.
   [Timezone Boundary Builder](https://github.com/evansiroky/timezone-boundary-builder)
   as the preferred candidate source. It includes ocean regions and merges
   regions whose timekeeping agrees now, which suits the decorative purpose
-  better than showing every political or historical distinction. Confirm the
-  exact release, format, size, attribution, and ODbL obligations before
-  bundling data.
+  better than showing every political or historical distinction. The bundled
+  source is release 2026f, `timezones-with-oceans-now.geojson.zip`.
 - Credit Timezone Boundary Builder and link to its project in the README and
-  the widget's About tab. Include the dataset license/attribution required for
-  the specific release, and record the exact release and preprocessing
-  provenance in the project documentation. GISGeography is not a data source
-  for this design; no GISGeography credit is needed unless its material is
-  separately used.
-- Preprocess the selected boundary geometry for the widget's display scale.
-  Keep the source release and preprocessing steps reproducible; do not require
-  Python or a network connection at runtime.
+  the widget's About information. The derived boundary data is ODbL 1.0 and
+  based on OpenStreetMap; include the OSM attribution. The IDL uses Natural
+  Earth's public-domain 10m geographic-lines data from release 5.1.2.
+- Preprocess the selected boundary geometry for the widget's display scale
+  using `tools/prepare_timezone_overlay.py` and Mapshaper 0.7.101. The script
+  extracts shared boundaries between distinct timezone features and simplifies
+  them with a 10 km Douglas-Peucker interval. Regeneration requires Python 3,
+  Node.js/npm, the source GeoJSON, and the Natural Earth GeoJSON; the widget
+  requires no network access or Python runtime.
 - Render the geometry as a vector overlay in the existing equirectangular map
   projection. Place boundaries and labels above the day/night-rendered map but
   below the Sun marker and Home/city pins.
@@ -43,7 +43,7 @@ the day/night imagery or the existing location pins.
 
 ## Configuration
 
-Add a dedicated **Time Zones** settings tab. Proposed controls:
+The dedicated **Time Zones** settings tab provides:
 
 - Show/hide time zone boundaries.
 - Boundary opacity.
@@ -57,7 +57,7 @@ Add a dedicated **Time Zones** settings tab. Proposed controls:
 - Label font family using the existing system-font selection/search approach,
   plus a time-zone-specific font size.
 - Emphasize the International Date Line (IDL), with a bolder line treatment
-  than ordinary boundaries. Show a distinct "International Date Line" label.
+  than ordinary boundaries and a distinct "International Date Line" label.
 
 The boundary layer is secondary to the Sun and day/night map: use subdued lines,
 no tinted zone fills, and avoid dense labels. Labels for small or narrow regions
@@ -69,7 +69,7 @@ and bottom label rows off until enabled by the user.
 
 ## Labels
 
-Use current UTC offsets as the primary labels. Let users choose between compact
+Use current UTC offsets as the primary labels. Users can choose between compact
 (`+1`), offset with UTC (`+1:00 UTC`), and zero-padded offset (`+01:00`)
 formats; default to `+1:00 UTC`. Fractional offsets must retain their minutes
 in every format (for example, `+5:30` or `+5:30 UTC`). Offsets change with
@@ -95,15 +95,13 @@ and validate its bends around islands against a reference map. This allows the
 IDL to remain recognizable even where the timezone dataset's zone boundaries
 do not follow it.
 
-## Open decisions
+## Remaining design decisions
 
-1. What are suitable default colors, opacity, widths, and IDL styling on both
-   day and night imagery?
-2. Which dataset release and simplification level provide a good balance of
-   visual accuracy, package size, and maintenance?
-3. Which source or reviewed path should provide the recognizable IDL?
+1. Revisit default colors, opacity, widths, and IDL styling after visual review.
+2. Revisit the dataset release and simplification level if visual review shows
+   missing or overly simplified boundaries.
 
-## Acceptance criteria for a future implementation
+## Implementation and validation criteria
 
 - The Time Zones settings tab controls layer visibility and the agreed visual
   options, with configuration persisted across restarts.

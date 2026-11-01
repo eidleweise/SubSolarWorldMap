@@ -13,6 +13,11 @@ ConfigModel {
         source: "config/Cities.qml"
     }
     ConfigCategory {
+        name: i18n("Time Zones")
+        icon: "globe"
+        source: "config/TimeZones.qml"
+    }
+    ConfigCategory {
         name: i18n("Developer")
         icon: "applications-development"
         source: "config/Developer.qml"

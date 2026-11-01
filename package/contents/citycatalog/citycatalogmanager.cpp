@@ -517,6 +517,45 @@ QString CityCatalogManager::formatZonedClockAt(const QDateTime &utcInstant, cons
     return clockText;
 }
 
+QString CityCatalogManager::formatCurrentUtcOffset(const QString &ianaId, int format) const
+{
+    return formatUtcOffsetAt(QDateTime::currentDateTimeUtc(), ianaId, format);
+}
+
+QString CityCatalogManager::formatUtcOffsetAt(const QDateTime &utcInstant,
+                                              const QString &ianaId, int format)
+{
+    if (ianaId.isEmpty() || format < 0 || format > 2) {
+        return QString();
+    }
+
+    const QTimeZone zone(ianaId.toUtf8());
+    if (!zone.isValid()) {
+        return QString();
+    }
+
+    const int offsetSeconds = zone.offsetFromUtc(utcInstant.toUTC());
+    const int offsetMinutes = qAbs(offsetSeconds) / 60;
+    const int hours = offsetMinutes / 60;
+    const int minutes = offsetMinutes % 60;
+    const QChar sign = offsetSeconds < 0 ? QLatin1Char('-') : QLatin1Char('+');
+
+    QString hourText = QString::number(hours);
+    if (format == 2 && hours < 10) {
+        hourText.prepend(QLatin1Char('0'));
+    }
+
+    QString result = sign + hourText;
+    if (format != 0 || minutes != 0) {
+        result += QLatin1Char(':');
+        result += QStringLiteral("%1").arg(minutes, 2, 10, QLatin1Char('0'));
+    }
+    if (format == 1) {
+        result += QStringLiteral(" UTC");
+    }
+    return result;
+}
+
 QString CityCatalogManager::formatZonedClock(const QString &ianaId, int dateFormat,
                                              int timeFormat, int timezoneFormat,
                                              const QString &localeName) const

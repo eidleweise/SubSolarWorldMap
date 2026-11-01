@@ -6,6 +6,8 @@ are in daylight and darkness.
 ## What you can do
 
 - See the Sun's current position and the moving day/night boundary.
+- Show land and ocean time-zone boundaries, current UTC-offset labels, and an
+  emphasized International Date Line.
 - Show or hide the map's date and time, and choose its format and text style.
 - Show your current location automatically, choose a city, or enter latitude
   and longitude for the Home pin.
@@ -77,6 +79,8 @@ Right-click the widget and choose **Configure SubSolar World Map…**:
 - **Date & Time** controls the clock overlay and its formatting.
 - **Cities** lets you choose automatic location, search for a city or enter
   coordinates for the Home pin, and manage selected city pins.
+- **Time Zones** controls the timezone-boundary overlay, UTC-offset labels, and
+  International Date Line styling.
 - **Developer** can show the deployment timestamp and open diagnostic logs or
   recent Plasma Shell messages.
 
@@ -102,8 +106,17 @@ The widget downloads a filtered subset of its city data. Credit:
 > https://github.com/dr5hn/countries-states-cities-database<br>
 > Licensed under ODbL v1.0.
 
+Time-zone boundaries are derived from the
+[Timezone Boundary Builder](https://github.com/evansiroky/timezone-boundary-builder)
+2026f `timezones-with-oceans-now` dataset, based on OpenStreetMap data. The
+derived boundary data is licensed under the
+[Open Data Commons Open Database License (ODbL) v1.0](https://opendatacommons.org/licenses/odbl/).
+© [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
+The International Date Line geometry is from
+[Natural Earth](https://www.naturalearthdata.com/), public domain.
+
 For build, architecture, and contribution details, see
 [docs/HANDOVER.md](docs/HANDOVER.md) and
 [docs/technical-code-document.md](docs/technical-code-document.md). The
-[time zone overlay design](docs/timezone-overlay-design.md) records a proposed
-feature that is still in the design stage.
+[time zone overlay design](docs/timezone-overlay-design.md) records the current
+behavior and remaining visual decisions.

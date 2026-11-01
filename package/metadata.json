@@ -4,6 +4,16 @@
         "Authors": [
             {
                 "Name": "SubSolar World Map contributors"
+            },
+            {
+                "Name": "Timezone Boundary Builder contributors",
+                "Website": "https://github.com/evansiroky/timezone-boundary-builder",
+                "Task": "Time zone boundary data (ODbL)"
+            },
+            {
+                "Name": "Natural Earth contributors",
+                "Website": "https://www.naturalearthdata.com/",
+                "Task": "International Date Line geometry"
             }
         ],
         "Category": "System Information",

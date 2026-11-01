@@ -49,6 +49,7 @@ public:
     Q_INVOKABLE QString formatZonedClock(const QString &ianaId, int dateFormat,
                                          int timeFormat, int timezoneFormat,
                                          const QString &localeName) const;
+    Q_INVOKABLE QString formatCurrentUtcOffset(const QString &ianaId, int format) const;
 
     // Pure, deterministic helper that formats a GIVEN UTC instant for the given
     // zone/format. formatZonedClock() calls this with the current UTC instant.
@@ -56,6 +57,8 @@ public:
     static QString formatZonedClockAt(const QDateTime &utcInstant, const QString &ianaId,
                                        int dateFormat, int timeFormat, int timezoneFormat,
                                        const QString &localeName);
+    static QString formatUtcOffsetAt(const QDateTime &utcInstant, const QString &ianaId,
+                                     int format);
 
 signals:
     void citiesChanged();

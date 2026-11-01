@@ -293,13 +293,17 @@ its cause is not confirmed.
 4. Optionally add local times to city pins or arbitrary custom locations if
    those become product requirements.
 
-## Proposed Feature: Time Zone Map Overlay
+## Story 15: Add a configurable time-zone overlay
 
-The design for configurable land and ocean time-zone boundaries, labels, and
-International Date Line emphasis is recorded in
-[timezone-overlay-design.md](timezone-overlay-design.md). This is a design
-proposal, not implemented behavior; data source, defaults, label format, and
-IDL classification remain open decisions.
+The initial implementation renders bundled, simplified land and ocean
+time-zone boundaries, configurable offset labels, and a separate International
+Date Line path. Settings persist boundary visibility, opacity, day/night colors,
+label rows, offset format, font, and IDL visibility. Data provenance and design
+decisions are recorded in [timezone-overlay-design.md](timezone-overlay-design.md).
+
+Status: **Implemented; build and automated tests pass.** Plasma runtime and
+visual review remain for line readability, label placement, performance, and
+the IDL path.
 
 ## Definition of Done for the Epic
 
