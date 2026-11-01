@@ -22,7 +22,7 @@
         "Id": "org.eidleweise.subsolarworldmap",
         "License": "GPL-3.0-only",
         "Name": "SubSolar World Map",
-        "Version": "0.1.0",
+        "Version": "0.2.0",
         "Website": "https://github.com/eidleweise/SubSolarWorldMap"
     },
     "X-Plasma-API-Minimum-Version": "6.0"

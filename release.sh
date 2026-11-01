@@ -129,10 +129,12 @@ regions across Earth, with a live clock and configurable location pins.
 
 Highlights:
 - Follow the Sun's position and the moving day/night boundary.
+- Show land and ocean time-zone boundaries with UTC-offset labels and a highlighted International Date Line.
+- Show the Moon's overhead location, phase, and illumination.
 - Use automatic location, choose a catalog city, or enter coordinates for Home.
 - Search an alphabetized, deduplicated city catalog and add city pins.
 - Customize pin colors, opacity, and city marker shape.
-- Configure the clock display and formatting.
+- Configure the clock display, formatting, and Moon marker.
 
 To install, download and extract the source archive, then run
 `./deploy.sh --restart-shell` from the extracted project directory. This builds
