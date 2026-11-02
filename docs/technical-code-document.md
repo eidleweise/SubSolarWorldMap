@@ -501,11 +501,12 @@ Important reliability concerns:
 ## 14. Development and Packaging Environment
 
 The widget links a native Qt plugin, so its binaries must match the ABI of the
-Plasma host they run on. Two helper scripts use a Fedora
-[Distrobox](https://distrobox.it/) container to build and preview against a
-matching toolchain rather than the host directly. These scripts complement
-`deploy.sh` (user install) and `release.sh` (source release) rather than
-replacing them.
+Plasma host they run on. The Bazzite workflow uses a Fedora
+[Distrobox](https://distrobox.it/) container provisioned by
+`makeFedoraDevDistroBox.sh`, while
+`makeCachyArchDistroBox.sh` creates or updates an Arch development environment
+for CachyOS/Arch. These workflows complement `deploy.sh` (user install) and
+`release.sh` (source release) rather than replacing them.
 
 ### 14.1 Live preview with `view.sh`
 
@@ -541,6 +542,23 @@ must be built inside a Fedora Distrobox whose ABI matches Bazzite.
   SHA-256 checksum under `build-bazzite/packages/`. The result is a binary
   package tied to the building Fedora release and architecture, so it must be
   rebuilt for other Fedora releases or architectures.
+
+### 14.3 CachyOS / Arch development environment
+
+`makeCachyArchDistroBox.sh` creates or updates the `cachy-dev` Arch Linux
+Distrobox and installs the compiler, Qt 6, Plasma development/runtime tools,
+and project test dependencies. Enter the container with
+`distrobox enter --name cachy-dev` to work in the Arch environment.
+
+### 14.4 CachyOS package build with `package-cachy.sh`
+
+Run `./package-cachy.sh` from the host checkout. It updates the `cachy-dev`
+environment, builds and tests the project inside it, stages the installed
+plasmoid and native CityCatalog plugin, then creates a `.plasmoid` package and
+SHA-256 checksum under `build-cachy/packages/`. The package name records its
+build date, architecture, and Qt version. Install it on the CachyOS host using
+the printed `kpackagetool6` command. Update the host and rebuild if its Qt ABI
+differs from the Arch container's Qt.
 
 ## 15. Implementation Phases
 

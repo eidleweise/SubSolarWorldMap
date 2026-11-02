@@ -4,20 +4,15 @@
 SubSolar World Map is a KDE Plasma 6 widget written for Fedora 44 / Bazzite that shows which parts of Earth
 are in daylight and darkness.
 
-## What you can do
+## What this thing does
 
-- See the Sun's current position and the moving day/night boundary.
-- Show the Moon's current overhead location with an illuminated phase icon;
-  hover to see its phase and illumination.
-- Show land and ocean time-zone boundaries, current UTC-offset labels, and an
-  emphasized International Date Line.
-- Show or hide the map's date and time, and choose its format and text style.
-- Show your current location automatically, choose a city, or enter latitude
-  and longitude for the Home pin.
-- Search the alphabetized city list and add map pins. Duplicate catalog entries
-  are combined; distinct places with the same name remain separate.
-- Set each pin's color and opacity.
-- Choose a shape for city pins.
+- At a glance, see where on Earth it's daytime and where it's night. The map tracks the Sun as the day/night line moves around the globe.
+- Add city pins to see the local time where friends, family, or colleagues are. (Hover over a pin to see their time.)
+- Show the Moon's location and phase, if that's your thing.
+- Turn on time-zone borders, UTC offsets, and the International Date Line.
+- Put a clock on the map so you can see your time too.
+- Set a Home pin automatically, choose a city, or enter coordinates.
+- Pretty much everything is customizable: opacity, colours, fonts, sizes, and time formats. I like options.
 
 The city list downloads the first time you open Cities settings and is then
 stored on your device for offline use. Automatic location uses the location
@@ -43,6 +38,50 @@ cd SubSolarWorldMap
 The script builds and tests the widget, installs it for your user, and restarts
 Plasma Shell. You can then add it from the desktop's **Add Widgets** menu as
 described above. No `sudo` is needed.
+
+### Fedora / Bazzite development environment
+
+On a host with Distrobox installed, create or update the Fedora development
+container:
+
+```sh
+./makeFedoraDevDistroBox.sh
+```
+
+This provisions the `fedora-dev` container with the compiler, Qt 6, Plasma
+development/runtime tools, and project test dependencies. Enter it with
+`distrobox enter --name fedora-dev`. The same environment is used to build
+Bazzite-compatible packages with `package-bazzite.sh`.
+
+### CachyOS / Arch Linux development environment
+
+On a host with Distrobox installed, create or update the Arch development
+container:
+
+```sh
+./makeCachyArchDistroBox.sh
+```
+
+This provisions a `cachy-dev` container with the compiler, Qt 6, Plasma
+development/runtime tools, and project test dependencies. Enter it for the
+normal development workflow:
+
+```sh
+distrobox enter --name cachy-dev
+```
+
+To build a `.plasmoid` package for the CachyOS host, run this from the
+repository on the host:
+
+```sh
+./package-cachy.sh
+```
+
+It updates the development container, builds and tests the widget there, and
+creates a package and SHA-256 checksum in `build-cachy/packages/`. Use the
+printed `kpackagetool6` command on the host to install it. Since the package
+contains a native Qt plugin, keep CachyOS updated and rebuild if the host Qt
+ABI differs from the container.
 
 ### Create a release
 
