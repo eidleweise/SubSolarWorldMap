@@ -97,9 +97,9 @@ Acceptance criteria:
 - labels or glyphs are readable,
 - each marker shows a city name.
 
-Implementation note: selected catalog city pins currently show names, not local
-times. Arbitrary user-entered locations are not supported; the selectable
-markers come from the city catalog, alongside the separate Home pin.
+Implementation note: hovering a selected catalog city pin shows its name and
+current local date/time in that city's IANA timezone. The separate Home pin
+uses system-local time. Arbitrary user-entered locations are not supported.
 
 ### Story 6: Configure home location and selected city pins (complete)
 
@@ -290,8 +290,8 @@ its cause is not confirmed.
    scene-placement warning if it recurs or starts affecting behavior.
 3. Optionally inspect the rendered map against the automated sunrise/sunset
    and polar-geometry scenarios.
-4. Optionally add local times to city pins or arbitrary custom locations if
-   those become product requirements.
+4. Optionally confirm in Plasma that pin tooltip times refresh each time hover
+   begins; the formatter reads the current time on each hover.
 
 ## Story 15: Add a configurable time-zone overlay
 

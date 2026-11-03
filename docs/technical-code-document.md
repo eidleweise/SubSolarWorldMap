@@ -121,6 +121,10 @@ used. The Home pin and the on-map clock badge remain system-local and
 unchanged. When a city record has an empty or invalid IANA id, the C++
 formatter returns an empty string and the tooltip falls back to the existing
 system-local path, so a tooltip never shows a blank string or "Invalid Date".
+The tooltip clock binding depends on the pin's hover state, so it is formatted
+when the pointer enters the pin rather than being cached when the map loads.
+The synchronous timezone conversion and formatting are lightweight; leaving and
+re-entering a pin refreshes its displayed time.
 
 A correctness trap drove this design: a raw `QDateTime` handed to QML is
 re-formatted by `Qt.formatTime`/`Qt.formatDateTime` in the system-local zone,

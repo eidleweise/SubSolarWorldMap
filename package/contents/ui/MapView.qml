@@ -581,18 +581,24 @@ Item {
                 id: homePinHoverHandler
             }
 
+            // Hover state invalidates this binding on pointer entry, instead of
+            // capturing the time when the pin delegate is first created.
+            readonly property string homeClockLine: homePinHoverHandler.hovered
+                ? ClockFormat.formatLocationClock(
+                      new Date(),
+                      mapView.dateFormat,
+                      mapView.timeFormat,
+                      mapView.timezoneFormat,
+                      mapView.localeName,
+                      "",
+                      mapView.systemLocalClock)
+                : ""
+
             // Home pin has no IANA timezone (derived from GeoClue/manual
             // coordinates), so the clock line falls back to system-local time.
             Controls.ToolTip.text: qsTr("Home location: %1").arg(modelData.name)
                                     + "\n"
-                                    + ClockFormat.formatLocationClock(
-                                          new Date(),
-                                          mapView.dateFormat,
-                                          mapView.timeFormat,
-                                          mapView.timezoneFormat,
-                                          mapView.localeName,
-                                          "",
-                                          mapView.systemLocalClock)
+                                    + homeClockLine
             Controls.ToolTip.visible: homePinHoverHandler.hovered
 
             Rectangle {
@@ -676,7 +682,11 @@ Item {
                 // C++ zoned-clock path (the city's OWN local time); if it is
                 // unavailable or the zone is empty/invalid it returns an empty
                 // string and we fall back to system-local via clockFormat.js.
+                // Reading hovered below also makes the clock refresh on entry.
                 readonly property string cityZonedClock: {
+                    if (!cityPinHoverHandler.hovered) {
+                        return ""
+                    }
                     if (typeof mapView.cityClock === "function") {
                         var zoned = mapView.cityClock(new Date(),
                                                       modelData.timezone,
