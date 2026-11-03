@@ -25,6 +25,9 @@ yourself. Your coordinates are not sent to a geocoding service.
 In Plasma, right-click the desktop and choose **Add Widgets**. Search for
 **SubSolar World Map** and add it to your desktop.
 
+## Store Page
+The KDE Store lists (SubSolarWorldMap)[https://store.kde.org/p/2380863/] and you can download the appropriate widget from their manually too.
+
 ### Install from a source checkout
 
 On a KDE Plasma 6 Linux system with the project build dependencies installed:
