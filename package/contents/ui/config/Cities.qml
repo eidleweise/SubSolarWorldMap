@@ -29,6 +29,10 @@ KCM.SimpleKCM {
     property var cfg_dateFormat
     property var cfg_timeFormat
     property var cfg_timezoneFormat
+    property var cfg_roundedMapCornerRadius
+    property var cfg_showMapShadow
+    property var cfg_mapShadowOpacity
+    property var cfg_mapShadowDirection
     property var cfg_fontFamily
     property var cfg_fontSize
     property var cfg_detectedHomeName
@@ -42,6 +46,10 @@ KCM.SimpleKCM {
     property var cfg_dateFormatDefault
     property var cfg_timeFormatDefault
     property var cfg_timezoneFormatDefault
+    property var cfg_roundedMapCornerRadiusDefault
+    property var cfg_showMapShadowDefault
+    property var cfg_mapShadowOpacityDefault
+    property var cfg_mapShadowDirectionDefault
     property var cfg_fontFamilyDefault
     property var cfg_fontSizeDefault
     property var cfg_selectedCitiesDefault

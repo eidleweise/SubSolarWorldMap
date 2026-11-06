@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
@@ -221,6 +222,8 @@ PlasmoidItem {
             anchors.centerIn: parent
             width: Math.min(fullView.width, fullView.height * 2)
             height: width / 2
+            opacity: Plasmoid.configuration.roundedMapCornerRadius > 0
+                     || Plasmoid.configuration.showMapShadow ? 0 : 1
             solarPosition: fullView.solarPosition
             lunarPosition: fullView.lunarPosition
             lunarPhase: fullView.lunarPhase
@@ -253,6 +256,57 @@ PlasmoidItem {
             timeZoneFontFamily: Plasmoid.configuration.timeZoneFontFamily
             timeZoneFontSize: Plasmoid.configuration.timeZoneFontSize
             showInternationalDateLine: Plasmoid.configuration.showInternationalDateLine
+        }
+
+        MultiEffect {
+            anchors.centerIn: mapViewContent
+            width: mapViewContent.width
+            height: mapViewContent.height
+            source: roundedMapMask
+            visible: Plasmoid.configuration.showMapShadow
+            shadowEnabled: Plasmoid.configuration.showMapShadow
+            shadowColor: "#ff000000"
+            shadowOpacity: Plasmoid.configuration.mapShadowOpacity / 100
+            shadowBlur: 0.7
+            property real shadowAngle: Math.PI
+                                      + Math.PI * Plasmoid.configuration.mapShadowDirection / 100
+            shadowHorizontalOffset: 8 * Math.cos(shadowAngle)
+            shadowVerticalOffset: -8 * Math.sin(shadowAngle)
+        }
+
+        MultiEffect {
+            anchors.centerIn: mapViewContent
+            width: mapViewContent.width
+            height: mapViewContent.height
+            source: mapViewContent
+            visible: Plasmoid.configuration.roundedMapCornerRadius > 0
+                     || Plasmoid.configuration.showMapShadow
+            maskEnabled: Plasmoid.configuration.roundedMapCornerRadius > 0
+            maskSource: roundedMapMask
+        }
+
+        ShaderEffectSource {
+            id: roundedMapMask
+            anchors.centerIn: mapViewContent
+            width: mapViewContent.width
+            height: mapViewContent.height
+            sourceItem: roundedMapMaskShape
+            hideSource: true
+            live: true
+            textureSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
+            visible: Plasmoid.configuration.roundedMapCornerRadius > 0
+            opacity: 0
+        }
+
+        Rectangle {
+            id: roundedMapMaskShape
+            anchors.centerIn: mapViewContent
+            width: mapViewContent.width
+            height: mapViewContent.height
+            radius: Math.min(width, height) * 0.5
+                    * Plasmoid.configuration.roundedMapCornerRadius / 100
+            color: "white"
+            antialiasing: true
         }
 
         Rectangle {

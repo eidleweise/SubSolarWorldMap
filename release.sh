@@ -135,6 +135,7 @@ Highlights:
 - Use automatic location, choose a catalog city, or enter coordinates for Home.
 - Search an alphabetized, deduplicated city catalog and add city pins.
 - Customize pin colors, opacity, and city marker shape.
+- Adjust map corner rounding and configure a drop shadow's visibility, opacity, and direction.
 - Configure the clock display, formatting, and Moon marker.
 
 To install, download and extract the source archive, then run
