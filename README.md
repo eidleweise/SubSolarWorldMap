@@ -53,8 +53,9 @@ container:
 
 This provisions the `fedora-dev` container with the compiler, Qt 6, Plasma
 development/runtime tools, and project test dependencies. Enter it with
-`distrobox enter --name fedora-dev`. The same environment is used to build
-Bazzite-compatible packages with `package-bazzite.sh`.
+`distrobox enter --name fedora-dev`. To build and package a Bazzite-compatible
+widget, run `./package-bazzite.sh` from the host checkout; it updates the
+container, builds inside it, and opens the output folder when complete.
 
 ### CachyOS / Arch Linux development environment
 

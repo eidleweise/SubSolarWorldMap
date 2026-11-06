@@ -111,6 +111,14 @@ case "${1:-}" in
         ;;
 esac
 
+if [[ -r /etc/os-release ]]; then
+    source /etc/os-release
+    if [[ "${ID:-}" == "arch" ]]; then
+        build_package
+        exit 0
+    fi
+fi
+
 if ! command -v distrobox >/dev/null 2>&1; then
     printf 'Required command not found: distrobox\n' >&2
     exit 1
@@ -122,3 +130,10 @@ ARCH_DISTROBOX_IMAGE="$ARCH_DISTROBOX_IMAGE" \
 
 distrobox enter --name "$ARCH_DISTROBOX_NAME" -- \
     bash "$ROOT_DIR/package-cachy.sh" --build-inside-container "$BUILD_DIR"
+
+package_dir="$BUILD_DIR/packages"
+if command -v xdg-open >/dev/null 2>&1 && xdg-open "$package_dir" >/dev/null 2>&1; then
+    :
+else
+    printf 'Open this folder to access the package and checksum:\n%s\n' "$package_dir"
+fi

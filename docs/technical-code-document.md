@@ -532,9 +532,11 @@ preview.
 
 `package-bazzite.sh` produces a prebuilt `.plasmoid` for the immutable
 [Bazzite](https://bazzite.gg/) host. Because the host is immutable, the package
-must be built inside a Fedora Distrobox whose ABI matches Bazzite.
+must be built inside a Fedora Distrobox whose ABI matches Bazzite. Run
+`./package-bazzite.sh` on the host; it creates or updates the configured Fedora
+Distrobox, builds inside it, and opens the host output folder when complete.
 
-- The script reads `/etc/os-release` and refuses to run unless `ID=fedora`,
+- The in-container build reads `/etc/os-release` and refuses to run unless `ID=fedora`,
   printing a reminder to build inside a Fedora Distrobox to match the Bazzite
   host ABI. It currently supports `x86_64` only.
 - It verifies the `package/metadata.json` version matches the CMake project
