@@ -511,8 +511,9 @@ Plasma host they run on. The Bazzite workflow uses a Fedora
 [Distrobox](https://distrobox.it/) container provisioned by
 `makeFedoraDevDistroBox.sh`, while
 `makeCachyArchDistroBox.sh` creates or updates an Arch development environment
-for CachyOS/Arch. These workflows complement `deploy.sh` (user install) and
-`release.sh` (source release) rather than replacing them.
+for CachyOS/Arch, and `makeKubuntuDevDistroBox.sh` provisions an Ubuntu
+environment for Kubuntu Plasma 6. These workflows complement `deploy.sh` (user
+install) and `release.sh` (source release) rather than replacing them.
 
 ### 14.1 Live preview with `view.sh`
 
@@ -567,6 +568,23 @@ SHA-256 checksum under `build-cachy/packages/`. The package name records its
 build date, architecture, and Qt version. Install it on the CachyOS host using
 the printed `kpackagetool6` command. Update the host and rebuild if its Qt ABI
 differs from the Arch container's Qt.
+
+### 14.5 Kubuntu / Ubuntu package build
+
+`makeKubuntuDevDistroBox.sh` provisions an Ubuntu Distrobox with Qt 6, KDE
+Frameworks 6, Plasma tools, and project build/test dependencies. It defaults
+to `docker.io/library/ubuntu:26.04` (Kubuntu 26.04 LTS). For Kubuntu 26.10, set
+`KUBUNTU_DISTROBOX_IMAGE=docker.io/library/ubuntu:26.10`; the variable can also
+select another Ubuntu image matching the target Kubuntu release. Kubuntu 24.04
+ships Plasma 5 and is not a supported runtime for this Plasma 6 widget.
+
+Run `./package-kubuntu.sh` on the host checkout. It updates the container,
+builds and tests the project, stages the installed plasmoid and native
+CityCatalog plugin, then creates a `.plasmoid` package and SHA-256 checksum
+under `build-kubuntu/packages/`. The package name includes the Ubuntu release
+and Debian architecture. Install it on the target Kubuntu host using the
+printed `kpackagetool6` command. Because the package includes a native Qt
+plugin, build with an Ubuntu release matching the target host's Qt ABI.
 
 ## 15. Implementation Phases
 

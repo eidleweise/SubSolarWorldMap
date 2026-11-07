@@ -87,6 +87,31 @@ printed `kpackagetool6` command on the host to install it. Since the package
 contains a native Qt plugin, keep CachyOS updated and rebuild if the host Qt
 ABI differs from the container.
 
+### Kubuntu / Ubuntu development and packaging
+
+The widget requires Plasma 6. Kubuntu 24.04 ships Plasma 5 and cannot run it;
+use a Kubuntu Plasma 6 host and build against the matching Ubuntu release. On a
+host with Distrobox installed, create or update the Ubuntu build container with:
+
+```sh
+./makeKubuntuDevDistroBox.sh
+```
+
+By default this uses Ubuntu 26.04 LTS. For Kubuntu 26.10, set
+`KUBUNTU_DISTROBOX_IMAGE=docker.io/library/ubuntu:26.10`; use the matching
+release on the target host. The image can likewise be overridden for other
+Kubuntu Plasma 6 releases. Package the widget from the host checkout:
+
+```sh
+./package-kubuntu.sh
+```
+
+This builds and tests the widget in the container, then creates a `.plasmoid`
+package and SHA-256 checksum under `build-kubuntu/packages/`. Use the printed
+`kpackagetool6` command on Kubuntu to install it. The package includes a native
+Qt plugin, so it is tied to the Ubuntu release and architecture used to build
+it.
+
 ### Create a release
 
 To publish a release, install and authenticate the
