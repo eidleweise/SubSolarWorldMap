@@ -128,6 +128,7 @@ SubSolar World Map is a KDE Plasma 6 widget showing the current day and night
 regions across Earth, with a live clock and configurable location pins.
 
 Highlights:
+- Organize map appearance and Moon visibility in a dedicated General settings tab.
 - Pin the time-zone overlay generator version for reproducible boundary data and streamline overlay repaint handling.
 - Follow the Sun's position and the moving day/night boundary.
 - Show land and ocean time-zone boundaries with UTC-offset labels and a highlighted International Date Line.
@@ -136,6 +137,7 @@ Highlights:
 - Search an alphabetized, deduplicated city catalog and add city pins.
 - Customize pin colors, opacity, and city marker shape.
 - Adjust map corner rounding and configure a drop shadow's visibility, opacity, and direction.
+- Adjust map opacity to let the desktop show through.
 - Configure the clock display, formatting, and Moon marker.
 
 To install, download and extract the source archive, then run

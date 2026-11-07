@@ -93,8 +93,10 @@ prepared list rather than sorting and deduplicating it during each search.
 
 ### 5.4 Configuration
 
-The plasmoid exposes a Date & Time page through Plasma's native applet
-settings. It stores the clock visibility and date and time format choices in
+The plasmoid exposes General and Date & Time pages through Plasma's native
+applet settings. General controls Moon visibility, map opacity and corner
+rounding, and an optional drop shadow. Date & Time stores the clock visibility
+and date and time format choices in
 `Plasmoid.configuration`; date formats include short, long, and ISO, while time formats offer 12- or
 24-hour clocks with optional seconds. Users can hide the timezone, show its
 abbreviation or full name, and select the clock font family and size. Future

@@ -316,8 +316,8 @@ Acceptance criteria:
 - The marker tracks the sublunar point and updates with the solar position.
 - Its icon indicates waxing/waning phase and approximate illumination.
 - Hovering the marker names the phase and illumination percentage.
-- A **Show the Moon's location and phase** toggle sits between Map Clock and
-  Date Format in Date & Time settings and persists across restarts.
+- A **Show the Moon's location and phase** toggle appears in General settings
+  and persists across restarts.
 - Moon position and phase are calculated locally, with no network or data
   dependency.
 

@@ -27,6 +27,7 @@ KCM.SimpleKCM {
     property var cfg_timeFormat
     property var cfg_timezoneFormat
     property var cfg_roundedMapCornerRadius
+    property var cfg_mapOpacity
     property var cfg_showMapShadow
     property var cfg_mapShadowOpacity
     property var cfg_mapShadowDirection
@@ -53,6 +54,7 @@ KCM.SimpleKCM {
     property var cfg_timeFormatDefault
     property var cfg_timezoneFormatDefault
     property var cfg_roundedMapCornerRadiusDefault
+    property var cfg_mapOpacityDefault
     property var cfg_showMapShadowDefault
     property var cfg_mapShadowOpacityDefault
     property var cfg_mapShadowDirectionDefault

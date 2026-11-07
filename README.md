@@ -124,9 +124,9 @@ Right-click the widget and choose **Configure SubSolar World Map…**:
 <img width="1402" height="809" alt="Screenshot_20261101_224148" src="https://github.com/user-attachments/assets/b5637f4e-c667-4747-a687-f1ab031e2b45" />
 
 
-- **Date & Time** controls the clock overlay, its formatting, and whether the
-  Moon marker is shown. Adjust the map's corner rounding and optionally enable
-  a drop shadow with configurable opacity and direction.
+- **General** controls Moon visibility, map opacity and corner rounding, and an
+  optional drop shadow with configurable opacity and direction.
+- **Date & Time** controls the clock overlay, its formatting, and font.
 - **Cities** lets you choose automatic location, search for a city or enter
   coordinates for the Home pin, and manage selected city pins.
 - **Time Zones** controls the timezone-boundary overlay, UTC-offset labels, and

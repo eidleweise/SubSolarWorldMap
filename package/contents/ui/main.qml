@@ -223,7 +223,9 @@ PlasmoidItem {
             width: Math.min(fullView.width, fullView.height * 2)
             height: width / 2
             opacity: Plasmoid.configuration.roundedMapCornerRadius > 0
-                     || Plasmoid.configuration.showMapShadow ? 0 : 1
+                     || Plasmoid.configuration.showMapShadow
+                     || Plasmoid.configuration.mapOpacity < 100
+                     ? 0 : 1
             solarPosition: fullView.solarPosition
             lunarPosition: fullView.lunarPosition
             lunarPhase: fullView.lunarPhase
@@ -262,8 +264,13 @@ PlasmoidItem {
             anchors.centerIn: mapViewContent
             width: mapViewContent.width
             height: mapViewContent.height
-            source: roundedMapMask
-            visible: Plasmoid.configuration.showMapShadow
+            source: mapViewContent
+            visible: Plasmoid.configuration.roundedMapCornerRadius > 0
+                     || Plasmoid.configuration.showMapShadow
+                     || Plasmoid.configuration.mapOpacity < 100
+            opacity: Plasmoid.configuration.mapOpacity / 100
+            maskEnabled: Plasmoid.configuration.roundedMapCornerRadius > 0
+            maskSource: roundedMapMask
             shadowEnabled: Plasmoid.configuration.showMapShadow
             shadowColor: "#ff000000"
             shadowOpacity: Plasmoid.configuration.mapShadowOpacity / 100
@@ -272,17 +279,6 @@ PlasmoidItem {
                                       + Math.PI * Plasmoid.configuration.mapShadowDirection / 100
             shadowHorizontalOffset: 8 * Math.cos(shadowAngle)
             shadowVerticalOffset: -8 * Math.sin(shadowAngle)
-        }
-
-        MultiEffect {
-            anchors.centerIn: mapViewContent
-            width: mapViewContent.width
-            height: mapViewContent.height
-            source: mapViewContent
-            visible: Plasmoid.configuration.roundedMapCornerRadius > 0
-                     || Plasmoid.configuration.showMapShadow
-            maskEnabled: Plasmoid.configuration.roundedMapCornerRadius > 0
-            maskSource: roundedMapMask
         }
 
         ShaderEffectSource {

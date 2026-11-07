@@ -12,11 +12,12 @@ KCM.SimpleKCM {
 
     // Plasma supplies every KConfig value and default to each category page.
     property alias cfg_showDateTime: showDateTime.checked
-    property alias cfg_showMoon: showMoon.checked
-    property alias cfg_roundedMapCornerRadius: mapCornerRadius.value
-    property alias cfg_showMapShadow: showMapShadow.checked
-    property alias cfg_mapShadowOpacity: mapShadowOpacity.value
-    property alias cfg_mapShadowDirection: mapShadowDirection.value
+    property var cfg_showMoon
+    property var cfg_roundedMapCornerRadius
+    property var cfg_mapOpacity
+    property var cfg_showMapShadow
+    property var cfg_mapShadowOpacity
+    property var cfg_mapShadowDirection
     property alias cfg_dateFormat: dateFormat.currentIndex
     property alias cfg_timeFormat: timeFormat.currentIndex
     property alias cfg_timezoneFormat: timezoneFormat.currentIndex
@@ -42,6 +43,7 @@ KCM.SimpleKCM {
     property var cfg_showDateTimeDefault
     property var cfg_showMoonDefault
     property var cfg_roundedMapCornerRadiusDefault
+    property var cfg_mapOpacityDefault
     property var cfg_showMapShadowDefault
     property var cfg_mapShadowOpacityDefault
     property var cfg_mapShadowDirectionDefault
@@ -90,59 +92,6 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Map clock:")
             text: i18n("Show date and time on the map")
             ToolTip.text: i18n("Display or hide the date and time overlay on the map.")
-            ToolTip.visible: hovered
-        }
-
-        CheckBox {
-            id: showMoon
-            text: i18n("Show the Moon's location and phase")
-            ToolTip.text: i18n("Mark where the Moon is directly overhead. Hover for its current phase and illumination.")
-            ToolTip.visible: hovered
-        }
-
-        Slider {
-            id: mapCornerRadius
-            Kirigami.FormData.label: i18n("Corner rounding:")
-            Layout.fillWidth: true
-            Layout.minimumWidth: dateFormat.implicitWidth
-            from: 0
-            to: 100
-            stepSize: 1
-            ToolTip.text: i18n("Adjust the map corners from square to very rounded.")
-            ToolTip.visible: hovered
-        }
-
-        CheckBox {
-            id: showMapShadow
-            Kirigami.FormData.label: i18n("Map shadow:")
-            text: i18n("Show a drop shadow")
-            ToolTip.text: i18n("Add a soft shadow behind the map.")
-            ToolTip.visible: hovered
-        }
-
-        Slider {
-            id: mapShadowOpacity
-            Kirigami.FormData.label: i18n("Shadow opacity:")
-            Layout.fillWidth: true
-            Layout.minimumWidth: dateFormat.implicitWidth
-            from: 0
-            to: 100
-            stepSize: 1
-            enabled: showMapShadow.checked
-            ToolTip.text: i18n("Set the shadow transparency.")
-            ToolTip.visible: hovered
-        }
-
-        Slider {
-            id: mapShadowDirection
-            Kirigami.FormData.label: i18n("Shadow direction:")
-            Layout.fillWidth: true
-            Layout.minimumWidth: dateFormat.implicitWidth
-            from: 0
-            to: 100
-            stepSize: 1
-            enabled: showMapShadow.checked
-            ToolTip.text: i18n("Move the shadow from the left, around the bottom, to the right.")
             ToolTip.visible: hovered
         }
 
