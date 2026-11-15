@@ -34,7 +34,10 @@ if ! distrobox list --no-color | awk -F'|' -v target="$KUBUNTU_DISTROBOX_NAME" '
 '; then
     printf 'Creating Kubuntu build Distrobox "%s" from %s\n' \
         "$KUBUNTU_DISTROBOX_NAME" "$KUBUNTU_DISTROBOX_IMAGE"
-    distrobox create --yes --name "$KUBUNTU_DISTROBOX_NAME" --image "$KUBUNTU_DISTROBOX_IMAGE"
+    # Ubuntu's multiline image description confuses the table formatter in some Distrobox releases.
+    distrobox create --yes --name "$KUBUNTU_DISTROBOX_NAME" \
+        --image "$KUBUNTU_DISTROBOX_IMAGE" \
+        --additional-flags '--label=org.opencontainers.image.description=SubSolar-Kubuntu-build-environment'
 fi
 
 printf 'Updating Ubuntu and installing Qt 6 / Plasma 6 build dependencies in "%s"...\n' \
